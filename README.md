@@ -1,6 +1,6 @@
 # SC3000 Lab 
 
-ntu 2026 Sem 2
+NTU 2026 Sem 2.
 
 ---
 
