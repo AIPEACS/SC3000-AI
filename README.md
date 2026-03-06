@@ -1,4 +1,4 @@
-# SC3000 Lab 
+# SC3000 Artificial Intelligence Lab 
 
 NTU 2026 Sem 2.
 
