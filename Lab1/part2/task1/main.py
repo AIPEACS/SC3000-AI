@@ -7,16 +7,25 @@ This script:
 1. Initializes the environment and value/policy functions
 2. Implements Value Iteration algorithm
 3. Implements Policy Iteration algorithm
-4. Visualizes and compares the results
-5. Tests the learned policies by running episodes
+4. Compares and visualizes the results
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import json
 import numpy as np
 from agent import (
     STEP_COST, GOAL_REWARD, NET_GOAL_REWARD, GAMMA, 
     ACTIONS, ACTION_MAP, reward_calc, get_next_state, calculate_final_reward
 )
 import scene_map as map0
+from visualization import (
+    VIS_DIR, print_value_function, print_policy, visualize_trajectory_and_rewards,
+    plot_and_save_results, save_policy_json
+)
+import matplotlib.pyplot as plt
 
 
 # ==================== INITIALIZATION FUNCTIONS ====================
@@ -301,49 +310,6 @@ def policy_iteration(max_iterations=1000, eval_theta=1e-6):
 
 # ==================== VISUALIZATION & COMPARISON ====================
 
-def action_to_symbol(action_idx):
-    """Convert action index to visual symbol."""
-    symbols = {0: '↑', 1: '↓', 2: '←', 3: '→', -1: 'G'}
-    return symbols.get(action_idx, '?')
-
-
-def print_value_function(V, title="Value Function"):
-    """
-    Display the value function as a grid.
-    Values are shown with 2 decimal places.
-    """
-    print(f"\n{title}:")
-    print("-" * 50)
-    # Print in visual order: top to bottom (y descending), left to right (x ascending)
-    for y in range(4, -1, -1):
-        row = []
-        for x in range(5):
-            if (x, y) in map0.road_blocking:
-                row.append("  [X]  ")
-            else:
-                row.append(f"{V[x, y]:7.2f}")
-        print(" ".join(row))
-    print()
-
-
-def print_policy(policy_det, title="Optimal Policy"):
-    """
-    Display the policy as a grid with action symbols.
-    """
-    print(f"\n{title}:")
-    print("-" * 50)
-    # Print in visual order: top to bottom (y descending), left to right (x ascending)
-    for y in range(4, -1, -1):
-        row = []
-        for x in range(5):
-            if (x, y) in map0.road_blocking:
-                row.append(" [X] ")
-            else:
-                row.append(f"  {action_to_symbol(policy_det[x, y])}  ")
-        print(" ".join(row))
-    print()
-
-
 def compare_policies(policy1, policy2):
     """
     Compare two policies and report differences.
@@ -408,26 +374,29 @@ def test_policy(policy_det, name="Policy", max_steps=50):
         max_steps: Maximum steps before timeout
         
     Returns:
-        tuple: (path, total_reward, steps_to_goal, success)
+        tuple: (path, total_reward, steps_to_goal, success, rewards_per_step)
     """
     x, y = map0.start_point
     path = [(x, y)]
     total_reward = 0
+    rewards_per_step = [0]  # Initial state has 0 reward
     
     for step in range(max_steps):
         if (x, y) == map0.end_point:
             print(f"{name}: ✓ Reached goal in {step} steps, Total reward: {total_reward:.2f}")
-            return path, total_reward, step, True
+            return path, total_reward, step, True, rewards_per_step
         
         action_idx = policy_det[x, y]
         action = ACTIONS[action_idx]
         
         x, y = get_next_state(x, y, action)
         path.append((x, y))
-        total_reward += reward_calc(x, y) if (x, y) != map0.end_point else NET_GOAL_REWARD
+        step_reward = reward_calc(x, y) if (x, y) != map0.end_point else NET_GOAL_REWARD
+        total_reward += step_reward
+        rewards_per_step.append(step_reward)
     
     print(f"{name}: ✗ Did not reach goal within {max_steps} steps")
-    return path, total_reward, max_steps, False
+    return path, total_reward, max_steps, False, rewards_per_step
 
 
 # ==================== MAIN EXECUTION ====================
@@ -476,11 +445,72 @@ def main():
     print("POLICY TESTING")
     print("=" * 60 + "\n")
     
-    path_vi, reward_vi, steps_vi, success_vi = test_policy(policy_vi, "Value Iteration Policy")
-    path_pi, reward_pi, steps_pi, success_pi = test_policy(policy_pi, "Policy Iteration Policy")
+    path_vi, reward_vi, steps_vi, success_vi, rewards_vi = test_policy(policy_vi, "Value Iteration Policy")
+    path_pi, reward_pi, steps_pi, success_pi, rewards_pi = test_policy(policy_pi, "Policy Iteration Policy")
+    
+    # -------- VISUALIZATION & JSON EXPORT --------
+    print("\n" + "=" * 60)
+    print("VISUALIZATION & JSON EXPORT")
+    print("=" * 60)
+    
+    # Visualize trajectories
+    print("\n📊 Generating trajectory visualizations...")
+    fig_vi = visualize_trajectory_and_rewards(path_vi, "Value Iteration Policy")
+    vi_traj_path = os.path.join(VIS_DIR, "value_iteration_trajectory.png")
+    fig_vi.savefig(vi_traj_path, dpi=150, bbox_inches='tight')
+    print(f"✓ Saved: {vi_traj_path}")
+    
+    fig_pi = visualize_trajectory_and_rewards(path_pi, "Policy Iteration Policy")
+    pi_traj_path = os.path.join(VIS_DIR, "policy_iteration_trajectory.png")
+    fig_pi.savefig(pi_traj_path, dpi=150, bbox_inches='tight')
+    print(f"✓ Saved: {pi_traj_path}")
+    
+    # Create comparison plots
+    print("\n📊 Generating comparison plots...")
+    plot_and_save_results(path_vi, rewards_vi, path_pi, rewards_pi)
+    
+    # Export policies to JSON
+    print("\n📋 Exporting policies to JSON format...")
+    save_policy_json(policy_vi, "ValueIteration_Optimal")
+    print()
+    save_policy_json(policy_pi, "PolicyIteration_Optimal")
+    
+    # Create summary JSON
+    print("\n📋 Creating summary report...")
+    summary = {
+        "task": "Task 1: Planning with Known Environment Model",
+        "discount_factor": float(GAMMA),
+        "step_cost": STEP_COST,
+        "goal_reward": GOAL_REWARD,
+        "convergence": {
+            "value_iteration_iterations": iter_vi,
+            "policy_iteration_iterations": iter_pi
+        },
+        "testing": {
+            "value_iteration": {
+                "steps_to_goal": steps_vi,
+                "total_reward": float(reward_vi),
+                "path": path_vi
+            },
+            "policy_iteration": {
+                "steps_to_goal": steps_pi,
+                "total_reward": float(reward_pi),
+                "path": path_pi
+            }
+        }
+    }
+    
+    summary_path = os.path.join(VIS_DIR, 'task1_summary.json')
+    with open(summary_path, 'w') as f:
+        json.dump(summary, f, indent=2)
+    print(f"✓ Saved summary to: {summary_path}")
+    
+    # Close matplotlib figures
+    plt.close('all')
     
     print("\n" + "=" * 60)
     print("TASK 1 COMPLETE")
+    print(f"All outputs saved to: {VIS_DIR}")
     print("=" * 60)
 
 
