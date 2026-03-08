@@ -217,10 +217,13 @@ def monte_carlo_control(num_episodes=1000, epsilon=0.1):
     for x in range(5):
         for y in range(5):
             if (x, y) == map0.end_point:
-                policy[x, y] = -1
+                policy[y, x] = -1
             else:
                 q_values = [Q[((x, y), a)] for a in ACTIONS]
-                policy[x, y] = np.argmax(q_values)
+                policy[y, x] = np.argmax(q_values)
+            # Mark obstacles
+            if (x, y) in map0.road_blocking:
+                policy[y, x] = 4
     
     print(f"\n✓ Training complete after {num_episodes} episodes\n")
     return Q, policy, training_history

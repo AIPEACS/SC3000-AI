@@ -43,7 +43,7 @@ def print_policy(policy_det, title="Learned Policy"):
     Display the deterministic policy as a grid with action symbols.
     
     Args:
-        policy_det: 5x5 array of action indices
+        policy_det: 5x5 array of action indices (indexed as [y, x])
         title: Title for display
     """
     print(f"\n{title}:")
@@ -55,7 +55,7 @@ def print_policy(policy_det, title="Learned Policy"):
             if (x, y) in map0.road_blocking:
                 row.append(" [X] ")
             else:
-                row.append(f"  {action_to_symbol(policy_det[x, y])}  ")
+                row.append(f"  {action_to_symbol(policy_det[y, x])}  ")
         print(" ".join(row))
     print()
 
@@ -65,7 +65,7 @@ def action_tensor_to_markdown(policy_det, title="Learned Policy"):
     Convert action tensor (5x5 policy matrix) to markdown table.
     
     Args:
-        policy_det: 5x5 array of action indices
+        policy_det: 5x5 array of action indices (indexed as [y, x])
         title: Title for the markdown table
         
     Returns:
@@ -84,7 +84,7 @@ def action_tensor_to_markdown(policy_det, title="Learned Policy"):
             if (x, y) in map0.road_blocking:
                 row.append(" OBS |")
             else:
-                action_idx = int(policy_det[x, y])
+                action_idx = int(policy_det[y, x])
                 action_name = action_names.get(action_idx, '?')
                 row.append(f" {action_name} |")
         markdown += "".join(row) + "\n"
@@ -171,7 +171,7 @@ def policy_to_action_tensor(policy_det, title="Action Tensor"):
     Convert deterministic policy to action tensor (5x5 matrix of action indices).
     
     Args:
-        policy_det: 5x5 array of action indices
+        policy_det: 5x5 array of action indices (indexed as [y, x])
         title: Title for the tensor
         
     Returns:
@@ -190,14 +190,11 @@ def policy_to_action_tensor(policy_det, title="Action Tensor"):
         "action_tensor": []
     }
     
-    # Convert 5x5 array to list of lists
-    for x in range(5):
+    # Convert 5x5 array to list of lists (row by row, y from 0-4, x from 0-4)
+    for y in range(5):
         row = []
-        for y in range(5):
-            if (x, y) == map0.end_point:
-                row.append(-1)  # Mark goal position
-            else:
-                row.append(int(policy_det[x, y]))
+        for x in range(5):
+            row.append(int(policy_det[y, x]))
         action_tensor["action_tensor"].append(row)
     
     return action_tensor
@@ -295,7 +292,7 @@ def save_policy_json(policy_det, algorithm_name="Learned_Policy"):
             if (x, y) == map0.end_point:
                 action_str = "GOAL"
             else:
-                action_idx = int(policy_det[x, y])
+                action_idx = int(policy_det[y, x])
                 action_str = ["UP", "DOWN", "LEFT", "RIGHT"][action_idx]
             
             state_key = f"({x},{y})"

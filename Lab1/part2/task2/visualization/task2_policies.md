@@ -11,11 +11,11 @@ Epsilon-greedy exploration with epsilon=0.1.
 
 | Y\X | 0 | 1 | 2 | 3 | 4 |
 |-----|---|---|---|---|----|
-| 4 | RIGHT | UP | RIGHT | RIGHT | GOAL |
-| 3 | DOWN | RIGHT | OBS | RIGHT | UP |
-| 2 | DOWN | RIGHT | RIGHT | RIGHT | UP |
-| 1 | RIGHT | UP | OBS | RIGHT | UP |
-| 0 | DOWN | RIGHT | RIGHT | RIGHT | UP |
+| 4 | RIGHT | RIGHT | RIGHT | RIGHT | GOAL |
+| 3 | RIGHT | UP | OBS | UP | UP |
+| 2 | UP | UP | RIGHT | RIGHT | UP |
+| 1 | UP | UP | OBS | UP | UP |
+| 0 | UP | UP | UP | RIGHT | LEFT |
 
 ## Legend
 - `UP` = Move up
