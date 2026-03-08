@@ -4,6 +4,6 @@
 |-----|---|---|---|---|---|
 | 4 | RIGHT | RIGHT | RIGHT | RIGHT | GOAL |
 | 3 | UP | UP | OBS | UP | UP |
-| 2 | UP | UP | RIGHT | UP | UP |
+| 2 | UP | RIGHT | RIGHT | RIGHT | UP |
 | 1 | UP | UP | OBS | UP | UP |
-| 0 | UP | UP | RIGHT | UP | UP |
+| 0 | UP | RIGHT | RIGHT | UP | UP |

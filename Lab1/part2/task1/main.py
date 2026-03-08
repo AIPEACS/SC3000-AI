@@ -13,6 +13,8 @@ This script:
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 import json
 import numpy as np
@@ -31,12 +33,12 @@ from visualization import (
 
 def initialize_value_function():
     """
-    Initialize the value function V(s) for all states.
+    Initialize the value function V(s) = 0 for all states.
     
     Returns:
-        np.ndarray: 5x5 grid of values initialized to 0
+        dict: V[(x, y)] = 0.0 for all (x, y)
     """
-    return np.zeros((5, 5))
+    return {(x, y): 0.0 for x in range(5) for y in range(5)}
 
 
 def initialize_policy():
@@ -44,11 +46,9 @@ def initialize_policy():
     Initialize a uniform random policy π(a|s).
     
     Returns:
-        np.ndarray: 5x5x4 tensor where policy[x,y,a] is probability of action a at state (x,y).
-                   Initially, all actions have equal probability (uniform random).
+        dict: policy[(x, y)] = np.ones(4)/4 for all (x, y)
     """
-    policy = np.ones((5, 5, 4)) / 4  # Uniform distribution over 4 actions
-    return policy
+    return {(x, y): np.ones(4) / 4 for x in range(5) for y in range(5)}
 
 
 def get_best_action(q_values):
@@ -69,16 +69,12 @@ def policy_to_deterministic(policy):
     Convert a stochastic policy to a deterministic policy (greedy).
     
     Args:
-        policy: 5x5x4 stochastic policy tensor
+        policy: dict {(x, y): np.array(4)} stochastic policy
         
     Returns:
-        np.ndarray: 5x5 array where each cell contains the best action index
+        dict: {(x, y): int} best action index for each state
     """
-    deterministic_policy = np.zeros((5, 5), dtype=int)
-    for x in range(5):
-        for y in range(5):
-            deterministic_policy[x, y] = np.argmax(policy[x, y, :])
-    return deterministic_policy
+    return {(x, y): int(np.argmax(policy[(x, y)])) for x in range(5) for y in range(5)}
 
 
 # ==================== VALUE ITERATION ====================
@@ -116,14 +112,14 @@ def value_iteration(max_iterations=1000, theta=1e-6):
     
     for iteration in range(max_iterations):
         delta = 0  # Track maximum change in value function
-        V_old = V.copy()
+        V_old = dict(V)
         
         # Backup: for each state, compute max Q-value over all actions
         for x in range(5):
             for y in range(5):
                 # Skip goal state (terminal state)
                 if (x, y) == map0.end_point:
-                    V[x, y] = 0  # Terminal state has value 0
+                    V[(x, y)] = 0  # Terminal state has value 0
                     continue
                 
                 # Compute Q-values for all actions at this state
@@ -132,12 +128,12 @@ def value_iteration(max_iterations=1000, theta=1e-6):
                     next_x, next_y = get_next_state(x, y, action)
                     # Deterministic transition: P(s'|s,a) = 1
                     # Q(s,a) = R(s,a,s') + γV(s')
-                    q_value = reward_calc(x, y) + GAMMA * V_old[next_x, next_y]
+                    q_value = reward_calc(x, y) + GAMMA * V_old[(next_x, next_y)]
                     q_values.append(q_value)
                 
                 # V(s) = max_a Q(s,a)
-                V[x, y] = max(q_values)
-                delta = max(delta, abs(V[x, y] - V_old[x, y]))
+                V[(x, y)] = max(q_values)
+                delta = max(delta, abs(V[(x, y)] - V_old[(x, y)]))
         
         # Log epoch metric
         epoch_metrics.append(delta)
@@ -151,20 +147,20 @@ def value_iteration(max_iterations=1000, theta=1e-6):
             break
     
     # Extract deterministic greedy policy from value function
-    policy_deterministic = np.zeros((5, 5), dtype=int)
+    policy_deterministic = {}
     for x in range(5):
         for y in range(5):
             if (x, y) == map0.end_point:
-                policy_deterministic[x, y] = -1  # No action needed at goal
+                policy_deterministic[(x, y)] = -1  # No action needed at goal
                 continue
             
             q_values = []
             for action in ACTIONS:
                 next_x, next_y = get_next_state(x, y, action)
-                q_value = reward_calc(x, y) + GAMMA * V[next_x, next_y]
+                q_value = reward_calc(x, y) + GAMMA * V[(next_x, next_y)]
                 q_values.append(q_value)
             
-            policy_deterministic[x, y] = np.argmax(q_values)
+            policy_deterministic[(x, y)] = int(np.argmax(q_values))
     
     print()
     return V, policy_deterministic, iteration + 1, epoch_metrics
@@ -199,22 +195,22 @@ def policy_evaluation(policy, max_iterations=1000, theta=1e-6):
         for x in range(5):
             for y in range(5):
                 if (x, y) == map0.end_point:
-                    V[x, y] = 0
+                    V[(x, y)] = 0
                     continue
                 
                 # V^π(s) = Σ_a π(a|s) Q^π(s,a)
                 value = 0
                 for action_idx in range(4):
                     action = ACTIONS[action_idx]
-                    action_prob = policy[x, y, action_idx]
+                    action_prob = policy[(x, y)][action_idx]
                     
                     next_x, next_y = get_next_state(x, y, action)
                     # Q^π(s,a) = R + γV^π(s')
-                    q_value = reward_calc(x, y) + GAMMA * V_old[next_x, next_y]
+                    q_value = reward_calc(x, y) + GAMMA * V_old[(next_x, next_y)]
                     value += action_prob * q_value
                 
-                V[x, y] = value
-                delta = max(delta, abs(V[x, y] - V_old[x, y]))
+                V[(x, y)] = value
+                delta = max(delta, abs(V[(x, y)] - V_old[(x, y)]))
         
         if delta < theta:
             break
@@ -238,25 +234,25 @@ def policy_improvement(V):
             - new_policy: 5x5x4 deterministic greedy policy (one-hot encoded)
             - policy_stable: Boolean indicating if policy has stabilized
     """
-    new_policy = np.zeros((5, 5, 4))
+    new_policy = {(x, y): np.zeros(4) for x in range(5) for y in range(5)}
     policy_stable = True
     
     for x in range(5):
         for y in range(5):
             if (x, y) == map0.end_point:
-                new_policy[x, y, :] = 0  # No action at goal
+                new_policy[(x, y)][:] = 0  # No action at goal
                 continue
             
             # Compute Q-values for all actions
             q_values = []
             for action in ACTIONS:
                 next_x, next_y = get_next_state(x, y, action)
-                q_value = reward_calc(x, y) + GAMMA * V[next_x, next_y]
+                q_value = reward_calc(x, y) + GAMMA * V[(next_x, next_y)]
                 q_values.append(q_value)
             
             # Choose greedy action
             best_action = np.argmax(q_values)
-            new_policy[x, y, best_action] = 1.0
+            new_policy[(x, y)][best_action] = 1.0
     
     return new_policy, policy_stable
 
@@ -296,11 +292,14 @@ def policy_iteration(max_iterations=1000, eval_theta=1e-6):
         V, eval_delta = policy_evaluation(policy, max_iterations=1000, theta=eval_theta)
         
         # 2. Policy Improvement
-        policy_old = policy.copy()
+        policy_old = {k: v.copy() for k, v in policy.items()}
         policy, _ = policy_improvement(V)
         
         # 3. Check for convergence
-        policy_changed = not np.array_equal(policy, policy_old)
+        policy_changed = any(
+            not np.array_equal(policy[(x, y)], policy_old[(x, y)])
+            for x in range(5) for y in range(5)
+        )
         
         # Log epoch metric (use max delta from evaluation)
         epoch_metrics.append(eval_delta)
@@ -329,7 +328,7 @@ def compare_policies(policy1, policy2):
     for x in range(5):
         for y in range(5):
             if (x, y) != map0.end_point:
-                if policy1[x, y] != policy2[x, y]:
+                if policy1[(x, y)] != policy2[(x, y)]:
                     differences += 1
     
     total_states = 25 - len(map0.road_blocking) - 1  # Exclude roadblocks and goal
@@ -348,9 +347,9 @@ def compare_value_functions(V1, V2):
     """
     Compare two value functions and report statistics.
     """
-    differences = np.abs(V1 - V2)
-    max_diff = np.max(differences)
-    mean_diff = np.mean(differences)
+    diffs = [abs(V1[(x, y)] - V2[(x, y)]) for x in range(5) for y in range(5)]
+    max_diff = max(diffs)
+    mean_diff = sum(diffs) / len(diffs)
     
     print(f"Value Function Comparison:")
     print(f"  - Max difference: {max_diff:.6f}")
@@ -370,7 +369,7 @@ def extract_policy_actions(policy_det):
     for x in range(5):
         for y in range(5):
             if (x, y) != map0.end_point:
-                action_idx = policy_det[x, y]
+                action_idx = policy_det[(x, y)]
                 policy_dict[(x, y)] = ACTIONS[action_idx]
     return policy_dict
 
@@ -397,7 +396,7 @@ def test_policy(policy_det, name="Policy", max_steps=50):
             print(f"{name}: ✓ Reached goal in {step} steps, Total reward: {total_reward:.2f}")
             return path, total_reward, step, True, rewards_per_step
         
-        action_idx = policy_det[x, y]
+        action_idx = policy_det[(x, y)]
         action = ACTIONS[action_idx]
         
         x, y = get_next_state(x, y, action)

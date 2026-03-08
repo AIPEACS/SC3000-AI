@@ -18,6 +18,8 @@ import random
 import os
 import json
 import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -178,24 +180,17 @@ def extract_policy_from_q(Q):
     Returns:
         np.ndarray: 5×5 array of action indices
     """
-    policy = np.zeros((5, 5), dtype=int)
+    policy = {}
     
     for x in range(5):
         for y in range(5):
-            # Get all Q-values for this state
-            q_values = []
-            for action in ACTIONS:
-                q_val = Q.get(((x, y), action), 0.0)
-                q_values.append(q_val)
-            
-            # Select action with max Q-value
-            best_action_idx = np.argmax(q_values)
-            policy[y, x] = best_action_idx
-    
-    # Mark special cells
-    for obs in map0.road_blocking:
-        policy[obs[1], obs[0]] = 4  # Obstacle marker
-    policy[map0.end_point[1], map0.end_point[0]] = -1  # Goal marker
+            if (x, y) == map0.end_point:
+                policy[(x, y)] = -1
+            elif (x, y) in map0.road_blocking:
+                policy[(x, y)] = 4
+            else:
+                q_values = [Q.get(((x, y), action), 0.0) for action in ACTIONS]
+                policy[(x, y)] = int(np.argmax(q_values))
     
     return policy
 
@@ -220,7 +215,7 @@ def test_policy(policy, num_tests=10, max_steps=100):
         test_return = 0
         
         for step in range(max_steps):
-            action_idx = policy[y, x]
+            action_idx = policy[(x, y)]
             if action_idx < 0 or action_idx >= 4:
                 break
             
@@ -258,17 +253,17 @@ def compare_policies(q_learning_policy, optimal_policy, mc_policy):
     
     for x in range(5):
         for y in range(5):
-            cell_val = q_learning_policy[y, x]
+            cell_val = q_learning_policy[(x, y)]
             # Skip obstacles and goal
             if cell_val < 0 or cell_val >= 4:
                 continue
             
             total_valid += 1
             
-            if optimal_policy[y, x] == cell_val:
+            if optimal_policy.get((x, y)) == cell_val:
                 matches_optimal += 1
             
-            if mc_policy[y, x] == cell_val:
+            if mc_policy.get((x, y)) == cell_val:
                 matches_mc += 1
     
     if total_valid > 0:
@@ -303,31 +298,26 @@ def main():
     try:
         with open("../task1/visualization/ValueIteration_Optimal_action_tensor.json", 'r') as f:
             task1_data = json.load(f)
-            # Task 1 JSON has "action_tensor" key
-            if isinstance(task1_data, dict) and "action_tensor" in task1_data:
-                optimal_policy_list = task1_data["action_tensor"]
-            else:
-                optimal_policy_list = task1_data
-            optimal_policy = np.array(optimal_policy_list, dtype=int)
+            # JSON format: action_tensor[y][x] = action for state (x, y)
+            tensor = task1_data["action_tensor"] if isinstance(task1_data, dict) and "action_tensor" in task1_data else task1_data
+            optimal_policy = {(x, y): int(tensor[y][x]) for y in range(5) for x in range(5)}
     except (FileNotFoundError, TypeError, KeyError) as e:
         print(f"Warning: Could not load Task 1 optimal policy: {e}")
-        optimal_policy = np.zeros((5, 5), dtype=int)
+        optimal_policy = {}
     
     # ===== LOAD MONTE CARLO POLICY (from Task 2) =====
     try:
         with open("../task2/visualization/MonteCarlo_Learned_action_tensor.json", 'r') as f:
             task2_data = json.load(f)
-            # Task 2 JSON should be direct array
-            if isinstance(task2_data, dict) and "action_tensor" in task2_data:
-                mc_policy_list = task2_data["action_tensor"]
-            else:
-                mc_policy_list = task2_data
-            mc_policy = np.array(mc_policy_list, dtype=int)
+            # JSON format: action_tensor[y][x] = action for state (x, y)
+            tensor = task2_data["action_tensor"] if isinstance(task2_data, dict) and "action_tensor" in task2_data else task2_data
+            mc_policy = {(x, y): int(tensor[y][x]) for y in range(5) for x in range(5)}
     except (FileNotFoundError, TypeError, KeyError) as e:
         print(f"Warning: Could not load Task 2 Monte Carlo policy: {e}")
+        mc_policy = {}
     
     # ===== POLICY COMPARISON =====
-    if optimal_policy.size > 0 and mc_policy.size > 0:
+    if optimal_policy and mc_policy:
         compare_policies(q_learning_policy, optimal_policy, mc_policy)
     
     # ===== TEST POLICY =====

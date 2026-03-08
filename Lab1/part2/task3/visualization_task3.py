@@ -36,7 +36,7 @@ def action_tensor_to_markdown(policy_det, title=""):
     for y in range(4, -1, -1):
         row_data = []
         for x in range(5):
-            action_idx = int(policy_det[y, x])
+            action_idx = int(policy_det[(x, y)])
             if action_idx == -1:
                 cell = "GOAL"
             elif action_idx == 4:
@@ -136,14 +136,14 @@ def save_action_tensor_json(Q_values, policy_array, algorithm_name="QLearning"):
     
     Args:
         Q_values: Dict of Q-values (not used in export, for consistency)
-        policy_array: 5×5 array of action indices
+        policy_array: dict {(x, y): int} of action indices
         algorithm_name: Algorithm name for file naming
         
     Returns:
         str: Path to saved JSON file
     """
-    # Convert to Python list for JSON serialization
-    policy_list = policy_array.astype(int).tolist()
+    # Convert dict to 2D list in [y][x] format (standard row-major)
+    policy_list = [[int(policy_array.get((x, y), 0)) for x in range(5)] for y in range(5)]
     
     output_dir = "./visualization/"
     os.makedirs(output_dir, exist_ok=True)
@@ -198,7 +198,7 @@ def print_policy(policy_matrix):
     for y in range(4, -1, -1):
         row = []
         for x in range(5):
-            action_idx = int(policy_matrix[y, x])
+            action_idx = int(policy_matrix[(x, y)])
             if action_idx == -1:
                 cell = "GOAL"
             elif action_idx == 4:

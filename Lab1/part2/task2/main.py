@@ -14,6 +14,8 @@ This script:
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 import json
 import numpy as np
@@ -213,17 +215,16 @@ def monte_carlo_control(num_episodes=1000, epsilon=0.1):
         })
     
     # Extract deterministic policy from final Q-values
-    policy = np.zeros((5, 5), dtype=int)
+    policy = {}
     for x in range(5):
         for y in range(5):
             if (x, y) == map0.end_point:
-                policy[y, x] = -1
+                policy[(x, y)] = -1
+            elif (x, y) in map0.road_blocking:
+                policy[(x, y)] = 4
             else:
                 q_values = [Q[((x, y), a)] for a in ACTIONS]
-                policy[y, x] = np.argmax(q_values)
-            # Mark obstacles
-            if (x, y) in map0.road_blocking:
-                policy[y, x] = 4
+                policy[(x, y)] = int(np.argmax(q_values))
     
     print(f"\n✓ Training complete after {num_episodes} episodes\n")
     return Q, policy, training_history
@@ -261,7 +262,7 @@ def compare_policies(policy_mc, policy_optimal):
         for y in range(5):
             if (x, y) not in map0.road_blocking and (x, y) != map0.end_point:
                 total_states += 1
-                if policy_mc[x, y] != policy_optimal[x, y]:
+                if policy_mc[(x, y)] != policy_optimal[(x, y)]:
                     differences += 1
     
     match_rate = ((total_states - differences) / total_states * 100) if total_states > 0 else 0

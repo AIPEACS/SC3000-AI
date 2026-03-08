@@ -55,7 +55,7 @@ def print_policy(policy_det, title="Learned Policy"):
             if (x, y) in map0.road_blocking:
                 row.append(" [X] ")
             else:
-                row.append(f"  {action_to_symbol(policy_det[y, x])}  ")
+                row.append(f"  {action_to_symbol(policy_det[(x, y)])}  ")
         print(" ".join(row))
     print()
 
@@ -84,7 +84,7 @@ def action_tensor_to_markdown(policy_det, title="Learned Policy"):
             if (x, y) in map0.road_blocking:
                 row.append(" OBS |")
             else:
-                action_idx = int(policy_det[y, x])
+                action_idx = int(policy_det[(x, y)])
                 action_name = action_names.get(action_idx, '?')
                 row.append(f" {action_name} |")
         markdown += "".join(row) + "\n"
@@ -190,11 +190,11 @@ def policy_to_action_tensor(policy_det, title="Action Tensor"):
         "action_tensor": []
     }
     
-    # Convert 5x5 array to list of lists (row by row, y from 0-4, x from 0-4)
+    # Convert to list of lists in [y][x] format (standard row-major)
     for y in range(5):
         row = []
         for x in range(5):
-            row.append(int(policy_det[y, x]))
+            row.append(int(policy_det[(x, y)]))
         action_tensor["action_tensor"].append(row)
     
     return action_tensor
@@ -292,7 +292,7 @@ def save_policy_json(policy_det, algorithm_name="Learned_Policy"):
             if (x, y) == map0.end_point:
                 action_str = "GOAL"
             else:
-                action_idx = int(policy_det[y, x])
+                action_idx = int(policy_det[(x, y)])
                 action_str = ["UP", "DOWN", "LEFT", "RIGHT"][action_idx]
             
             state_key = f"({x},{y})"

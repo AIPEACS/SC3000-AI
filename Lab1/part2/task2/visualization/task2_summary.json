@@ -7,7 +7,7 @@
   "step_cost": -1,
   "goal_reward": 10,
   "training": {
-    "final_episode_reward": -10.0,
-    "avg_reward_last_100": -1.53
+    "final_episode_reward": -5.0,
+    "avg_reward_last_100": -1.3
   }
 }

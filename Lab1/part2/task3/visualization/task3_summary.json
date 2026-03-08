@@ -4,10 +4,10 @@
   "learning_rate_alpha": 0.1,
   "exploration_rate_epsilon": 0.1,
   "discount_factor_gamma": 0.9,
-  "final_avg_reward": -1.03,
-  "total_training_reward": -6749.0,
+  "final_avg_reward": -0.64,
+  "total_training_reward": -5644.0,
   "max_episode_reward": 2.0,
-  "min_episode_reward": -143.0,
-  "test_avg_return": 0.9,
+  "min_episode_reward": -81.0,
+  "test_avg_return": 0.8,
   "test_success_rate": 10
 }
