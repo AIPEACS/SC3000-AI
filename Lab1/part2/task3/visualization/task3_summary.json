@@ -1,13 +1,13 @@
 {
   "algorithm": "Q-Learning",
-  "num_episodes": 5000,
+  "num_episodes": 50000,
   "learning_rate_alpha": 0.1,
-  "exploration_rate_epsilon": 0.1,
+  "exploration_rate_epsilon": 1.0,
   "discount_factor_gamma": 0.9,
-  "final_avg_reward": -0.64,
-  "total_training_reward": -5644.0,
+  "final_avg_reward": -0.08,
+  "total_training_reward": -917374.0,
   "max_episode_reward": 2.0,
-  "min_episode_reward": -81.0,
-  "test_avg_return": 0.8,
+  "min_episode_reward": -789.0,
+  "test_avg_return": -0.2,
   "test_success_rate": 10
 }
