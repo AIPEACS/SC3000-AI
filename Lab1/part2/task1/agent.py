@@ -1,4 +1,4 @@
-import Lab1.part2.program_design.scene_map as map0
+import scene_map as map0
 import numpy as np
 
 
@@ -19,3 +19,8 @@ def reward_calc(x=0, y=0):
 
 
 
+def calculate_final_reward(path):
+    total_reward = 0
+    for position in path:
+        total_reward += reward_calc(position[0], position[1])
+    return total_reward
