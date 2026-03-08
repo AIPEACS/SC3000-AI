@@ -36,13 +36,13 @@ def initialize_q_values():
     Initialize Q(s,a) = 0 for all state-action pairs.
     
     Returns:
-        dict: Q-values keyed by (state, action)
+        dict: Q-values keyed by ((x, y), action)
     """
     Q = {}
     for x in range(5):
         for y in range(5):
             for action in ACTIONS:
-                Q[(x, y, action)] = 0.0
+                Q[((x, y), action)] = 0.0
     return Q
 
 
@@ -51,13 +51,13 @@ def initialize_returns():
     Initialize returns tracking for each state-action pair.
     
     Returns:
-        dict: Lists of returns keyed by (state, action)
+        dict: Lists of returns keyed by ((x, y), action)
     """
     returns = {}
     for x in range(5):
         for y in range(5):
             for action in ACTIONS:
-                returns[(x, y, action)] = []
+                returns[((x, y), action)] = []
     return returns
 
 
@@ -66,13 +66,13 @@ def initialize_visit_counts():
     Initialize visit counts for each state-action pair.
     
     Returns:
-        dict: Visit counts keyed by (state, action)
+        dict: Visit counts keyed by ((x, y), action)
     """
     visits = {}
     for x in range(5):
         for y in range(5):
             for action in ACTIONS:
-                visits[(x, y, action)] = 0
+                visits[((x, y), action)] = 0
     return visits
 
 
@@ -90,12 +90,17 @@ def select_action_epsilon_greedy(x, y, Q, epsilon=0.1):
     Returns:
         str: Selected action
     """
+    # Initialize missing state-actions if needed (defensive)
+    for action in ACTIONS:
+        if ((x, y), action) not in Q:
+            Q[((x, y), action)] = 0.0
+    
     if random.random() < epsilon:
         # Explore: select random action
         return random.choice(ACTIONS)
     else:
         # Exploit: select best action
-        q_values = [Q[(x, y, a)] for a in ACTIONS]
+        q_values = [Q[((x, y), a)] for a in ACTIONS]
         best_action_idx = np.argmax(q_values)
         return ACTIONS[best_action_idx]
 
@@ -180,6 +185,11 @@ def monte_carlo_control(num_episodes=1000, epsilon=0.1):
             state, action, reward = episode[t]
             G = reward + GAMMA * G
             
+            # Initialize if missing (defensive programming)
+            if (state, action) not in returns:
+                returns[(state, action)] = []
+                visit_counts[(state, action)] = 0
+            
             # First-visit: only update first occurrence
             if (state, action) not in visited_pairs:
                 visited_pairs.add((state, action))
@@ -209,7 +219,7 @@ def monte_carlo_control(num_episodes=1000, epsilon=0.1):
             if (x, y) == map0.end_point:
                 policy[x, y] = -1
             else:
-                q_values = [Q[(x, y, a)] for a in ACTIONS]
+                q_values = [Q[((x, y), a)] for a in ACTIONS]
                 policy[x, y] = np.argmax(q_values)
     
     print(f"\n✓ Training complete after {num_episodes} episodes\n")
@@ -231,7 +241,7 @@ def q_values_to_array(Q):
     for x in range(5):
         for y in range(5):
             for a_idx, action in enumerate(ACTIONS):
-                q_state_action[x, y, a_idx] = Q[(x, y, action)]
+                q_state_action[x, y, a_idx] = Q[((x, y), action)]
             v_state[x, y] = np.max(q_state_action[x, y, :])
     
     return q_state_action, v_state
