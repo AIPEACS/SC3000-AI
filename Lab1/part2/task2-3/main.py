@@ -35,7 +35,7 @@ from visualization_task3 import (
 
 # Parameters
 NUM_EPISODES = 50000
-EPSILON = 1.0       # Start with full exploration; decays to EPSILON_MIN
+EPSILON = 0.1       # Fixed ε throughout training (as per assignment spec)
 ALPHA = agent.ALPHA
 GAMMA = agent.GAMMA
 STEP_COST = agent.STEP_COST
@@ -94,27 +94,23 @@ def select_action_epsilon_greedy(x, y, Q, epsilon=EPSILON):
         return random.choice(best_actions)
 
 
-EPSILON_MIN = 0.01   # Floor value for epsilon after decay
-EPSILON_DECAY = (EPSILON - EPSILON_MIN) / NUM_EPISODES  # Linear decay per episode
-
 
 def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON, alpha=ALPHA):
     """
     Main Q-learning training loop.
     
     Updates Q-values online: Q(s,a) ← Q(s,a) + α[r + γ max Q(s',a') - Q(s,a)]
-    Epsilon decays linearly from EPSILON to EPSILON_MIN over training.
+    Uses a fixed ε-greedy strategy throughout training (ε = 0.1 per assignment spec).
     
     Args:
         num_episodes: Number of training episodes
-        epsilon: Initial exploration rate (decays each episode)
+        epsilon: Fixed exploration rate
         alpha: Learning rate
         
     Returns:
         tuple: (Q_values dict, training_history dict)
     """
     Q = initialize_q_values()
-    current_epsilon = epsilon
     
     # Training history tracking
     training_history = {
@@ -126,7 +122,7 @@ def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON, alpha=ALPHA):
     print("\n" + "=" * 60)
     print("Q-LEARNING TRAINING")
     print("=" * 60)
-    print(f"Episodes: {num_episodes}, Learning rate (α): {alpha}, Epsilon (ε): {epsilon} → {EPSILON_MIN}")
+    print(f"Episodes: {num_episodes}, Learning rate (α): {alpha}, Epsilon (ε): {epsilon} (fixed)")
     print()
     
     for episode_num in range(num_episodes):
@@ -138,7 +134,7 @@ def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON, alpha=ALPHA):
         # Run one episode until goal or timeout
         for step in range(1000):  # Max 1000 steps per episode
             # Record visited state-action pair
-            action = select_action_epsilon_greedy(x, y, Q, current_epsilon)
+            action = select_action_epsilon_greedy(x, y, Q, epsilon)
             visited_pairs.add(((x, y), action))
             
             # Take action in environment (stochastic)
@@ -163,9 +159,6 @@ def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON, alpha=ALPHA):
             if (x, y) == map0.end_point:
                 break
         
-        # Decay epsilon after each episode
-        current_epsilon = max(EPSILON_MIN, current_epsilon - EPSILON_DECAY)
-
         # Record episode history
         training_history['episode_rewards'].append(episode_reward)
         training_history['episode_visited_pairs'].append(len(visited_pairs))
@@ -181,7 +174,7 @@ def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON, alpha=ALPHA):
         # Progress update every 5000 episodes
         if (episode_num + 1) % 5000 == 0:
             print(f"Episode {episode_num+1}/{num_episodes}: Reward={episode_reward:.2f}, "
-                  f"Visited pairs={len(visited_pairs)}, ε={current_epsilon:.3f}")
+                  f"Visited pairs={len(visited_pairs)}")
     
     print(f"✓ Training complete after {num_episodes} episodes\n")
     
