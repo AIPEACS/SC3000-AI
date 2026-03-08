@@ -1,0 +1,48 @@
+{
+  "title": "ValueIteration_Optimal - Action Tensor",
+  "description": "5x5 matrix of optimal action indices for each state",
+  "action_indices": {
+    "0": "UP",
+    "1": "DOWN",
+    "2": "LEFT",
+    "3": "RIGHT",
+    "-1": "GOAL"
+  },
+  "action_tensor": [
+    [
+      0,
+      0,
+      0,
+      0,
+      3
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      3
+    ],
+    [
+      3,
+      0,
+      3,
+      0,
+      3
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      3
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      -1
+    ]
+  ]
+}

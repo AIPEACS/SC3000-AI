@@ -85,195 +85,106 @@ def print_policy(policy_det, title="Optimal Policy"):
     print()
 
 
-# ==================== PLOTTING FUNCTIONS ====================
-
-def visualize_trajectory_and_rewards(path, name="Policy"):
+def action_tensor_to_markdown(policy_det, title="Optimal Policy"):
     """
-    Create a comprehensive visualization showing:
-    1. Agent's trajectory on the grid (left)
-    2. Cumulative rewards per step (right)
+    Convert action tensor (5x5 policy matrix) to markdown table.
     
     Args:
-        path: List of (x, y) positions visited
-        name: Name of the policy for title
+        policy_det: 5x5 array of action indices
+        title: Title for the markdown table
         
     Returns:
-        matplotlib.figure.Figure: Generated figure object
+        str: Markdown formatted 5x5 table
     """
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    action_names = {0: 'UP', 1: 'DOWN', 2: 'LEFT', 3: 'RIGHT', -1: 'GOAL'}
     
-    # -------- Left plot: Grid with trajectory --------
-    ax1.set_xlim(-0.5, 4.5)
-    ax1.set_ylim(-0.5, 4.5)
-    ax1.set_aspect('equal')
-    ax1.set_xlabel('X Coordinate')
-    ax1.set_ylabel('Y Coordinate')
-    ax1.set_title(f'{name}\nAgent Trajectory on Grid')
-    ax1.grid(True, alpha=0.3)
-    ax1.set_xticks(range(5))
-    ax1.set_yticks(range(5))
+    markdown = f"## {title}\n\n"
+    markdown += "| Y\\X | 0 | 1 | 2 | 3 | 4 |\n"
+    markdown += "|-----|---|---|---|---|----|\n"
     
-    # Draw roadblocks
-    for obstacle in map0.road_blocking:
-        rect = patches.Rectangle((obstacle[0] - 0.4, obstacle[1] - 0.4), 0.8, 0.8,
-                                 linewidth=2, edgecolor='red', facecolor='red', alpha=0.5)
-        ax1.add_patch(rect)
-        ax1.text(obstacle[0], obstacle[1], 'X', ha='center', va='center', 
-                fontsize=12, fontweight='bold')
+    # Print in visual order: top to bottom (y descending), left to right (x ascending)
+    for y in range(4, -1, -1):
+        row = [f"| {y} |"]
+        for x in range(5):
+            if (x, y) in map0.road_blocking:
+                row.append(" OBS |")
+            else:
+                action_idx = int(policy_det[x, y])
+                action_name = action_names.get(action_idx, '?')
+                row.append(f" {action_name} |")
+        markdown += "".join(row) + "\n"
     
-    # Draw start and goal
-    start_circle = patches.Circle(map0.start_point, 0.15, color='green', zorder=5)
-    ax1.add_patch(start_circle)
-    ax1.text(map0.start_point[0] - 0.35, map0.start_point[1] - 0.35, 'S', 
-            fontsize=10, fontweight='bold')
-    
-    goal_circle = patches.Circle(map0.end_point, 0.15, color='blue', zorder=5)
-    ax1.add_patch(goal_circle)
-    ax1.text(map0.end_point[0] + 0.25, map0.end_point[1] + 0.25, 'G', 
-            fontsize=10, fontweight='bold')
-    
-    # Draw trajectory
-    if len(path) > 1:
-        x_coords = [p[0] for p in path]
-        y_coords = [p[1] for p in path]
-        ax1.plot(x_coords, y_coords, 'b-', linewidth=2, alpha=0.6, label='Path')
-        ax1.scatter(x_coords[:-1], y_coords[:-1], color='cyan', s=50, alpha=0.7, zorder=4)
-        ax1.scatter([x_coords[-1]], [y_coords[-1]], color='darkblue', s=100, marker='*', zorder=6)
-    
-    ax1.legend()
-    
-    # -------- Right plot: Cumulative rewards per step --------
-    cumulative_rewards = []
-    total = 0
-    for position in path:
-        r = reward_calc(position[0], position[1])
-        total += r
-        cumulative_rewards.append(total)
-    
-    steps = list(range(len(cumulative_rewards)))
-    ax2.plot(steps, cumulative_rewards, 'go-', linewidth=2, markersize=8, label='Cumulative Reward')
-    ax2.fill_between(steps, cumulative_rewards, alpha=0.3, color='green')
-    ax2.set_xlabel('Step')
-    ax2.set_ylabel('Cumulative Reward')
-    ax2.set_title(f'{name}\nCumulative Reward per Step (γ={GAMMA})')
-    ax2.grid(True, alpha=0.3)
-    ax2.legend()
-    
-    # Add annotations for key points
-    if cumulative_rewards:
-        ax2.text(len(cumulative_rewards) - 1, cumulative_rewards[-1], 
-                f'  Final: {cumulative_rewards[-1]:.2f}', 
-                fontsize=10, va='bottom', fontweight='bold')
-    
-    plt.tight_layout()
-    return fig
+    return markdown
 
 
-def plot_and_save_results(path_vi, rewards_vi, path_pi, rewards_pi):
+# ==================== PLOTTING FUNCTIONS ====================
+def plot_and_save_results(epoch_metrics_vi, epoch_metrics_pi):
     """
-    Create comprehensive comparison plots and save to file.
-    Includes 4 subplots:
-    1. Cumulative reward comparison
-    2. Reward per step comparison
-    3. Value Iteration trajectory
-    4. Policy Iteration trajectory
+    Create training epoch analysis plots showing convergence.
     
     Args:
-        path_vi: Path taken by Value Iteration policy
-        rewards_vi: Rewards per step for VI policy
-        path_pi: Path taken by Policy Iteration policy
-        rewards_pi: Rewards per step for PI policy
+        epoch_metrics_vi: List of max value changes per epoch for VI
+        epoch_metrics_pi: List of max value changes per epoch for PI
     """
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    fig.suptitle('Task 1: Planning Algorithms - Value Iteration vs Policy Iteration', 
+    fig.suptitle('Task 1: Planning Algorithms - Training Convergence Analysis', 
                 fontsize=16, fontweight='bold')
     
-    # Plot 1: Cumulative Reward over Steps
+    epochs_vi = list(range(1, len(epoch_metrics_vi) + 1))
+    epochs_pi = list(range(1, len(epoch_metrics_pi) + 1))
+    
+    # Plot 1: Bellman Residual per Epoch (Line Plot)
     ax = axes[0, 0]
-    steps_vi = range(len(rewards_vi))
-    steps_pi = range(len(rewards_pi))
-    cumulative_vi = np.cumsum(rewards_vi)
-    cumulative_pi = np.cumsum(rewards_pi)
+    ax.semilogy(epochs_vi, epoch_metrics_vi, 'b-o', linewidth=2.5, markersize=7, label='Value Iteration', alpha=0.8)
+    ax.semilogy(epochs_pi, epoch_metrics_pi, 'r-s', linewidth=2.5, markersize=7, label='Policy Iteration', alpha=0.8)
+    ax.set_xlabel('Training Epoch', fontsize=11, fontweight='bold')
+    ax.set_ylabel('Max Value Change (Bellman Residual)', fontsize=11, fontweight='bold')
+    ax.set_title('Convergence: Max Value Change per Epoch (Log Scale)', fontsize=12, fontweight='bold')
+    ax.grid(True, alpha=0.3, which='both')
+    ax.legend(fontsize=10, loc='upper right')
     
-    ax.plot(steps_vi, cumulative_vi, 'b-o', linewidth=2, markersize=6, label='Value Iteration')
-    ax.plot(steps_pi, cumulative_pi, 'r-s', linewidth=2, markersize=6, label='Policy Iteration')
-    ax.set_xlabel('Step', fontsize=11)
-    ax.set_ylabel('Cumulative Reward', fontsize=11)
-    ax.set_title('Cumulative Reward per Step', fontsize=12, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.legend(fontsize=10)
-    
-    # Plot 2: Reward per Step
+    # Plot 2: Bellman Residual per Epoch (Bar Comparison)
     ax = axes[0, 1]
-    ax.bar(np.array(steps_vi) - 0.2, rewards_vi, width=0.4, label='Value Iteration', alpha=0.8)
-    ax.bar(np.array(steps_pi) + 0.2, rewards_pi, width=0.4, label='Policy Iteration', alpha=0.8)
-    ax.set_xlabel('Step', fontsize=11)
-    ax.set_ylabel('Reward', fontsize=11)
-    ax.set_title('Reward per Step', fontsize=12, fontweight='bold')
+    width = 0.35
+    x_pos_vi = np.array(epochs_vi) - width/2
+    x_pos_pi = np.array(epochs_pi) + width/2
+    ax.bar(x_pos_vi, epoch_metrics_vi, width, label='Value Iteration', alpha=0.8, color='steelblue', edgecolor='black')
+    ax.bar(x_pos_pi, epoch_metrics_pi, width, label='Policy Iteration', alpha=0.8, color='salmon', edgecolor='black')
+    ax.set_xlabel('Training Epoch', fontsize=11, fontweight='bold')
+    ax.set_ylabel('Max Value Change', fontsize=11, fontweight='bold')
+    ax.set_title('Bellman Residual: Algorithm Comparison', fontsize=12, fontweight='bold')
     ax.grid(True, alpha=0.3, axis='y')
     ax.legend(fontsize=10)
     
-    # Plot 3: Agent Path - Value Iteration
+    # Plot 3: Value Iteration - Training Progress
     ax = axes[1, 0]
-    path_x_vi = [p[0] for p in path_vi]
-    path_y_vi = [p[1] for p in path_vi]
+    ax.semilogy(epochs_vi, epoch_metrics_vi, 'b-o', linewidth=2, markersize=6, alpha=0.8)
+    ax.fill_between(epochs_vi, epoch_metrics_vi, alpha=0.2, color='blue')
+    ax.set_xlabel('Training Epoch', fontsize=11, fontweight='bold')
+    ax.set_ylabel('Max Value Change (Log Scale)', fontsize=11, fontweight='bold')
+    ax.set_title(f'Value Iteration - Convergence ({len(epochs_vi)} epochs)', fontsize=12, fontweight='bold')
+    ax.grid(True, alpha=0.3, which='both')
     
-    # Draw grid
-    for i in range(5):
-        ax.axhline(y=i-0.5, color='gray', linewidth=0.5, alpha=0.3)
-        ax.axvline(x=i-0.5, color='gray', linewidth=0.5, alpha=0.3)
+    # Add convergence stats
+    final_change_vi = epoch_metrics_vi[-1] if epoch_metrics_vi else 0
+    ax.text(0.98, 0.97, f'Final Change: {final_change_vi:.2e}', 
+           transform=ax.transAxes, fontsize=10, verticalalignment='top', horizontalalignment='right',
+           bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
     
-    # Draw obstacles
-    for idx, obs in enumerate(map0.road_blocking):
-        ax.plot(obs[0], obs[1], 's', color='black', markersize=15, 
-               label='Obstacle' if idx == 0 else '')
-    
-    # Draw start and goal
-    ax.plot(map0.start_point[0], map0.start_point[1], 'go', markersize=12, label='Start')
-    ax.plot(map0.end_point[0], map0.end_point[1], 'r*', markersize=20, label='Goal')
-    
-    # Draw path
-    ax.plot(path_x_vi, path_y_vi, 'b-', linewidth=2, alpha=0.6)
-    ax.plot(path_x_vi, path_y_vi, 'bo', markersize=5, alpha=0.6)
-    
-    ax.set_xlim(-0.5, 4.5)
-    ax.set_ylim(-0.5, 4.5)
-    ax.set_xlabel('X Coordinate', fontsize=11)
-    ax.set_ylabel('Y Coordinate', fontsize=11)
-    ax.set_title(f'Value Iteration Path ({len(path_vi)-1} steps)', fontsize=12, fontweight='bold')
-    ax.set_aspect('equal')
-    ax.legend(fontsize=9)
-    
-    # Plot 4: Agent Path - Policy Iteration
+    # Plot 4: Policy Iteration - Training Progress
     ax = axes[1, 1]
-    path_x_pi = [p[0] for p in path_pi]
-    path_y_pi = [p[1] for p in path_pi]
+    ax.semilogy(epochs_pi, epoch_metrics_pi, 'r-s', linewidth=2, markersize=6, alpha=0.8)
+    ax.fill_between(epochs_pi, epoch_metrics_pi, alpha=0.2, color='red')
+    ax.set_xlabel('Training Epoch', fontsize=11, fontweight='bold')
+    ax.set_ylabel('Max Value Change (Log Scale)', fontsize=11, fontweight='bold')
+    ax.set_title(f'Policy Iteration - Convergence ({len(epochs_pi)} epochs)', fontsize=12, fontweight='bold')
+    ax.grid(True, alpha=0.3, which='both')
     
-    # Draw grid
-    for i in range(5):
-        ax.axhline(y=i-0.5, color='gray', linewidth=0.5, alpha=0.3)
-        ax.axvline(x=i-0.5, color='gray', linewidth=0.5, alpha=0.3)
-    
-    # Draw obstacles
-    for idx, obs in enumerate(map0.road_blocking):
-        ax.plot(obs[0], obs[1], 's', color='black', markersize=15, 
-               label='Obstacle' if idx == 0 else '')
-    
-    # Draw start and goal
-    ax.plot(map0.start_point[0], map0.start_point[1], 'go', markersize=12, label='Start')
-    ax.plot(map0.end_point[0], map0.end_point[1], 'r*', markersize=20, label='Goal')
-    
-    # Draw path
-    ax.plot(path_x_pi, path_y_pi, 'r-', linewidth=2, alpha=0.6)
-    ax.plot(path_x_pi, path_y_pi, 'ro', markersize=5, alpha=0.6)
-    
-    ax.set_xlim(-0.5, 4.5)
-    ax.set_ylim(-0.5, 4.5)
-    ax.set_xlabel('X Coordinate', fontsize=11)
-    ax.set_ylabel('Y Coordinate', fontsize=11)
-    ax.set_title(f'Policy Iteration Path ({len(path_pi)-1} steps)', fontsize=12, fontweight='bold')
-    ax.set_aspect('equal')
-    ax.legend(fontsize=9)
+    # Add convergence stats
+    final_change_pi = epoch_metrics_pi[-1] if epoch_metrics_pi else 0
+    ax.text(0.98, 0.97, f'Final Change: {final_change_pi:.2e}', 
+           transform=ax.transAxes, fontsize=10, verticalalignment='top', horizontalalignment='right',
+           bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
     
     plt.tight_layout()
     plot_path = os.path.join(VIS_DIR, 'task1_visualization.png')
@@ -373,6 +284,71 @@ def policy_to_json_simple(policy_det, title):
             policy_json["policy"][state_key] = action_str
     
     return policy_json
+
+
+def policy_to_action_tensor(policy_det, title="Action Tensor"):
+    """
+    Convert deterministic policy to action tensor (5x5 matrix of action indices).
+    
+    Args:
+        policy_det: 5x5 array of action indices
+        title: Title for the tensor
+        
+    Returns:
+        dict: JSON-serializable action tensor representation
+    """
+    action_tensor = {
+        "title": title,
+        "description": "5x5 matrix of optimal action indices for each state",
+        "action_indices": {
+            "0": "UP",
+            "1": "DOWN",
+            "2": "LEFT",
+            "3": "RIGHT",
+            "-1": "GOAL"
+        },
+        "action_tensor": []
+    }
+    
+    # Convert 5x5 array to list of lists, with goal positions marked as -1
+    for x in range(5):
+        row = []
+        for y in range(5):
+            if (x, y) == map0.end_point:
+                row.append(-1)  # Mark goal position
+            else:
+                row.append(int(policy_det[x, y]))
+        action_tensor["action_tensor"].append(row)
+    
+    return action_tensor
+
+
+def save_action_tensor_json(policy_det, algorithm_name="Optimal_Policy"):
+    """
+    Save the action tensor (5x5 policy matrix) to a JSON file.
+    
+    Args:
+        policy_det: Deterministic policy (5x5 array)
+        algorithm_name: Name for the output file
+        
+    Returns:
+        str: Path to saved JSON file
+    """
+    tensor_json = policy_to_action_tensor(policy_det, f"{algorithm_name} - Action Tensor")
+    
+    # Save to file in VIS_DIR
+    filename = os.path.join(VIS_DIR, f"{algorithm_name}_action_tensor.json")
+    with open(filename, 'w') as f:
+        json.dump(tensor_json, f, indent=2)
+    
+    print(f"✓ Saved action tensor to: {filename}")
+    
+    # Also print to console
+    print(f"\n{algorithm_name} Action Tensor (JSON):")
+    print("-" * 60)
+    print(json.dumps(tensor_json, indent=2))
+    
+    return filename
 
 
 def save_policy_json(policy_det, algorithm_name="Optimal_Policy", format_type="matrix"):

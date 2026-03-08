@@ -22,10 +22,9 @@ from agent import (
 )
 import scene_map as map0
 from visualization import (
-    VIS_DIR, print_value_function, print_policy, visualize_trajectory_and_rewards,
-    plot_and_save_results, save_policy_json
+    VIS_DIR, print_value_function, print_policy, action_tensor_to_markdown,
+    save_policy_json, save_action_tensor_json
 )
-import matplotlib.pyplot as plt
 
 
 # ==================== INITIALIZATION FUNCTIONS ====================
@@ -102,16 +101,18 @@ def value_iteration(max_iterations=1000, theta=1e-6):
         theta: Convergence threshold (max change in value function)
         
     Returns:
-        tuple: (value_function, policy, iteration_count)
+        tuple: (value_function, policy, iteration_count, epoch_metrics)
             - value_function: 5x5 grid of state values
             - policy: 5x5 array of best actions
             - iteration_count: Number of iterations until convergence
+            - epoch_metrics: List of max value changes per epoch
     """
     print("=" * 60)
     print("VALUE ITERATION")
     print("=" * 60)
     
     V = initialize_value_function()
+    epoch_metrics = []  # Track max change per epoch
     
     for iteration in range(max_iterations):
         delta = 0  # Track maximum change in value function
@@ -138,6 +139,9 @@ def value_iteration(max_iterations=1000, theta=1e-6):
                 V[x, y] = max(q_values)
                 delta = max(delta, abs(V[x, y] - V_old[x, y]))
         
+        # Log epoch metric
+        epoch_metrics.append(delta)
+        
         if (iteration + 1) % 100 == 0 or iteration == 0:
             print(f"Iteration {iteration + 1}: max change = {delta:.6f}")
         
@@ -163,7 +167,7 @@ def value_iteration(max_iterations=1000, theta=1e-6):
             policy_deterministic[x, y] = np.argmax(q_values)
     
     print()
-    return V, policy_deterministic, iteration + 1
+    return V, policy_deterministic, iteration + 1, epoch_metrics
 
 
 # ==================== POLICY ITERATION ====================
@@ -182,7 +186,9 @@ def policy_evaluation(policy, max_iterations=1000, theta=1e-6):
         theta: Convergence threshold
         
     Returns:
-        np.ndarray: Value function V^π under the given policy
+        tuple: (value_function, max_delta)
+            - value_function: Value function V^π under the given policy
+            - max_delta: Maximum value change in final iteration
     """
     V = initialize_value_function()
     
@@ -213,7 +219,7 @@ def policy_evaluation(policy, max_iterations=1000, theta=1e-6):
         if delta < theta:
             break
     
-    return V
+    return V, delta
 
 
 def policy_improvement(V):
@@ -272,20 +278,22 @@ def policy_iteration(max_iterations=1000, eval_theta=1e-6):
         eval_theta: Convergence threshold for policy evaluation
         
     Returns:
-        tuple: (value_function, policy, iteration_count)
+        tuple: (value_function, policy, iteration_count, epoch_metrics)
             - value_function: 5x5 grid of state values
             - policy: 5x5 array of best actions
             - iteration_count: Number of policy iterations
+            - epoch_metrics: List of max value changes per epoch
     """
     print("=" * 60)
     print("POLICY ITERATION")
     print("=" * 60)
     
     policy = initialize_policy()
+    epoch_metrics = []  # Track max change per epoch
     
     for iteration in range(max_iterations):
         # 1. Policy Evaluation
-        V = policy_evaluation(policy, max_iterations=1000, theta=eval_theta)
+        V, eval_delta = policy_evaluation(policy, max_iterations=1000, theta=eval_theta)
         
         # 2. Policy Improvement
         policy_old = policy.copy()
@@ -293,6 +301,9 @@ def policy_iteration(max_iterations=1000, eval_theta=1e-6):
         
         # 3. Check for convergence
         policy_changed = not np.array_equal(policy, policy_old)
+        
+        # Log epoch metric (use max delta from evaluation)
+        epoch_metrics.append(eval_delta)
         
         if (iteration + 1) % 10 == 0 or iteration == 0:
             print(f"Iteration {iteration + 1}: Policy changed = {policy_changed}")
@@ -305,7 +316,7 @@ def policy_iteration(max_iterations=1000, eval_theta=1e-6):
     policy_deterministic = policy_to_deterministic(policy)
     
     print()
-    return V, policy_deterministic, iteration + 1
+    return V, policy_deterministic, iteration + 1, epoch_metrics
 
 
 # ==================== VISUALIZATION & COMPARISON ====================
@@ -410,10 +421,10 @@ def main():
     print("=" * 60 + "\n")
     
     # -------- VALUE ITERATION --------
-    V_vi, policy_vi, iter_vi = value_iteration(max_iterations=1000, theta=1e-6)
+    V_vi, policy_vi, iter_vi, metrics_vi = value_iteration(max_iterations=1000, theta=1e-6)
     
     # -------- POLICY ITERATION --------
-    V_pi, policy_pi, iter_pi = policy_iteration(max_iterations=1000, eval_theta=1e-6)
+    V_pi, policy_pi, iter_pi, metrics_pi = policy_iteration(max_iterations=1000, eval_theta=1e-6)
     
     # -------- RESULTS --------
     print("\n" + "=" * 60)
@@ -448,32 +459,38 @@ def main():
     path_vi, reward_vi, steps_vi, success_vi, rewards_vi = test_policy(policy_vi, "Value Iteration Policy")
     path_pi, reward_pi, steps_pi, success_pi, rewards_pi = test_policy(policy_pi, "Policy Iteration Policy")
     
-    # -------- VISUALIZATION & JSON EXPORT --------
+    # -------- JSON & MARKDOWN EXPORT --------
     print("\n" + "=" * 60)
-    print("VISUALIZATION & JSON EXPORT")
+    print("RESULTS EXPORT")
     print("=" * 60)
     
-    # Visualize trajectories
-    print("\n📊 Generating trajectory visualizations...")
-    fig_vi = visualize_trajectory_and_rewards(path_vi, "Value Iteration Policy")
-    vi_traj_path = os.path.join(VIS_DIR, "value_iteration_trajectory.png")
-    fig_vi.savefig(vi_traj_path, dpi=150, bbox_inches='tight')
-    print(f"✓ Saved: {vi_traj_path}")
-    
-    fig_pi = visualize_trajectory_and_rewards(path_pi, "Policy Iteration Policy")
-    pi_traj_path = os.path.join(VIS_DIR, "policy_iteration_trajectory.png")
-    fig_pi.savefig(pi_traj_path, dpi=150, bbox_inches='tight')
-    print(f"✓ Saved: {pi_traj_path}")
-    
-    # Create comparison plots
-    print("\n📊 Generating comparison plots...")
-    plot_and_save_results(path_vi, rewards_vi, path_pi, rewards_pi)
-    
-    # Export policies to JSON
-    print("\n📋 Exporting policies to JSON format...")
-    save_policy_json(policy_vi, "ValueIteration_Optimal")
+    # Export action tensors to JSON
+    print("\n📋 Exporting action tensors to JSON format...")
+    save_action_tensor_json(policy_vi, "ValueIteration_Optimal")
     print()
-    save_policy_json(policy_pi, "PolicyIteration_Optimal")
+    save_action_tensor_json(policy_pi, "PolicyIteration_Optimal")
+    
+    # Export action tensors to Markdown
+    print("\n📊 Exporting action tensors to Markdown format...")
+    md_vi = action_tensor_to_markdown(policy_vi, "Value Iteration - Optimal Policy")
+    md_pi = action_tensor_to_markdown(policy_pi, "Policy Iteration - Optimal Policy")
+    
+    md_path = os.path.join(VIS_DIR, 'task1_policies.md')
+    with open(md_path, 'w') as f:
+        f.write("# Task 1: Planning with Known Environment\n\n")
+        f.write("## Problem\n")
+        f.write("5x5 Grid World with obstacles at (2,1) and (2,3). Discount factor gamma=0.9, step cost=-1, goal reward=+10.\n\n")
+        f.write("## Optimal Policies\n\n")
+        f.write(md_vi + "\n")
+        f.write(md_pi + "\n")
+        f.write("## Legend\n")
+        f.write("- `UP` = Move up\n")
+        f.write("- `DOWN` = Move down\n")
+        f.write("- `LEFT` = Move left\n")
+        f.write("- `RIGHT` = Move right\n")
+        f.write("- `OBS` = Obstacle\n")
+        f.write("- `GOAL` = Goal state (4,4)\n")
+    print(f"✓ Saved policies to: {md_path}")
     
     # Create summary JSON
     print("\n📋 Creating summary report...")
@@ -504,9 +521,6 @@ def main():
     with open(summary_path, 'w') as f:
         json.dump(summary, f, indent=2)
     print(f"✓ Saved summary to: {summary_path}")
-    
-    # Close matplotlib figures
-    plt.close('all')
     
     print("\n" + "=" * 60)
     print("TASK 1 COMPLETE")
