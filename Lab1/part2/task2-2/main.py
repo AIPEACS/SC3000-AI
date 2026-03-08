@@ -27,7 +27,8 @@ from agent_task2 import (
 import scene_map as map0
 from visualization_task2 import (
     VIS_DIR, print_policy, action_tensor_to_markdown,
-    save_policy_json, save_action_tensor_json, save_q_values, plot_training_history
+    save_policy_json, save_action_tensor_json, save_q_values, plot_training_history,
+    plot_q_value_history
 )
 
 
@@ -107,7 +108,7 @@ def select_action_epsilon_greedy(x, y, Q, epsilon=0.1):
         return ACTIONS[best_action_idx]
 
 
-def generate_episode(Q, epsilon=0.1, max_steps=50):
+def generate_episode(Q, epsilon=0.1, max_steps=1000):
     """
     Generate one complete episode following epsilon-greedy policy.
     
@@ -173,6 +174,7 @@ def monte_carlo_control(num_episodes=1000, epsilon=0.1):
     visit_counts = initialize_visit_counts()
     
     training_history = []  # Track metrics per episode
+    q_snapshots = []       # Q-value snapshots every 100 episodes
     
     for episode_num in range(num_episodes):
         # Generate episode
@@ -181,19 +183,20 @@ def monte_carlo_control(num_episodes=1000, epsilon=0.1):
         # Track training metrics
         visited_pairs = set()
         
-        # Process episode (backwards for discounting)
+        # First pass (forward): identify first occurrence of each (state, action)
+        first_visits = {}
+        for t, (state, action, _) in enumerate(episode):
+            if (state, action) not in first_visits:
+                first_visits[(state, action)] = t
+        
+        # Process episode (backwards for efficient G computation)
         G = 0  # Return
         for t in range(len(episode) - 1, -1, -1):
             state, action, reward = episode[t]
             G = reward + GAMMA * G
             
-            # Initialize if missing (defensive programming)
-            if (state, action) not in returns:
-                returns[(state, action)] = []
-                visit_counts[(state, action)] = 0
-            
-            # First-visit: only update first occurrence
-            if (state, action) not in visited_pairs:
+            # First-visit: only update at the first occurrence (forward)
+            if first_visits.get((state, action)) == t:
                 visited_pairs.add((state, action))
                 returns[(state, action)].append(G)
                 visit_counts[(state, action)] += 1
@@ -213,6 +216,14 @@ def monte_carlo_control(num_episodes=1000, epsilon=0.1):
             'visited_pairs': len(visited_pairs),
             'epsilon': epsilon
         })
+
+        # Snapshot Q-values every 100 episodes
+        if (episode_num + 1) % 100 == 0:
+            snapshot = {
+                (x, y): {a: Q[((x, y), a)] for a in ACTIONS}
+                for x in range(5) for y in range(5)
+            }
+            q_snapshots.append((episode_num + 1, snapshot))
     
     # Extract deterministic policy from final Q-values
     policy = {}
@@ -227,7 +238,7 @@ def monte_carlo_control(num_episodes=1000, epsilon=0.1):
                 policy[(x, y)] = int(np.argmax(q_values))
     
     print(f"\n✓ Training complete after {num_episodes} episodes\n")
-    return Q, policy, training_history
+    return Q, policy, training_history, q_snapshots
 
 
 # ==================== POLICY EXTRACTION & COMPARISON ====================
@@ -285,7 +296,7 @@ def main():
     print("=" * 60 + "\n")
     
     # -------- MONTE CARLO CONTROL --------
-    Q, policy_mc, training_history = monte_carlo_control(num_episodes=5000, epsilon=0.1)
+    Q, policy_mc, training_history, q_snapshots = monte_carlo_control(num_episodes=20000, epsilon=0.1)
     
     # -------- EXTRACT Q-VALUES --------
     q_state_action, v_state = q_values_to_array(Q)
@@ -334,6 +345,10 @@ def main():
     # Create training history plot
     print("\n📈 Generating training history plots...")
     plot_training_history(training_history, "MonteCarlo_Training")
+
+    # Q-value history debug visualization
+    print("\n📈 Generating Q-value history debug plot...")
+    plot_q_value_history(q_snapshots)
     
     # Create summary JSON
     print("\n📋 Creating summary report...")
