@@ -19,6 +19,7 @@ import os
 import json
 import sys
 import io
+import matplotlib.pyplot as plt
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 # Add parent directory to path
@@ -28,7 +29,8 @@ import agent_task3 as agent
 import scene_map as map0
 from visualization_task3 import (
     action_tensor_to_markdown, plot_training_history,
-    save_action_tensor_json, save_q_values, print_policy
+    save_action_tensor_json, save_q_values, print_policy,
+    plot_q_value_history
 )
 
 # Parameters
@@ -117,7 +119,8 @@ def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON, alpha=ALPHA):
     # Training history tracking
     training_history = {
         'episode_rewards': [],
-        'episode_visited_pairs': []
+        'episode_visited_pairs': [],
+        'q_snapshots': [],    # list of (episode, {(x,y): {action: value}})
     }
     
     print("\n" + "=" * 60)
@@ -166,6 +169,14 @@ def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON, alpha=ALPHA):
         # Record episode history
         training_history['episode_rewards'].append(episode_reward)
         training_history['episode_visited_pairs'].append(len(visited_pairs))
+
+        # Snapshot Q-values every 100 episodes
+        if (episode_num + 1) % 100 == 0:
+            snapshot = {
+                (x, y): {a: Q[((x, y), a)] for a in ACTIONS}
+                for x in range(5) for y in range(5)
+            }
+            training_history['q_snapshots'].append((episode_num + 1, snapshot))
         
         # Progress update every 5000 episodes
         if (episode_num + 1) % 5000 == 0:
@@ -367,7 +378,17 @@ def main():
     fig = plot_training_history(training_history, "Q-Learning")
     plot_path = "./visualization/QLearning_Training_training_history.png"
     fig.savefig(plot_path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
     print(f"✓ Plot saved to: {plot_path}")
+
+    # Plot Q-value history
+    print("📈 Generating Q-value history plots...")
+    fig_q = plot_q_value_history(training_history['q_snapshots'])
+    os.makedirs("./debug_visualization/", exist_ok=True)
+    q_plot_path = "./debug_visualization/QLearning_Q_value_history.png"
+    fig_q.savefig(q_plot_path, dpi=150, bbox_inches='tight')
+    plt.close(fig_q)
+    print(f"✓ Q-value history plot saved to: {q_plot_path}")
     
     # Save summary
     print("📋 Creating summary report...")
