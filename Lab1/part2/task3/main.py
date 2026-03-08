@@ -1,0 +1,404 @@
+"""
+Task 3: Q-Learning Implementation
+==================================
+Implements tabular Q-learning with ε-greedy exploration.
+
+The agent learns online without knowledge of the transition model.
+Each step updates: Q(s,a) ← Q(s,a) + α[r + γ max Q(s',a') - Q(s,a)]
+
+Parameters:
+- Learning rate: α = 0.1
+- Exploration rate: ε = 0.1
+- Discount factor: γ = 0.9
+- Episodes: 5000
+"""
+
+import numpy as np
+import random
+import os
+import json
+import sys
+
+# Add parent directory to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import agent_task3 as agent
+import scene_map as map0
+from visualization_task3 import (
+    action_tensor_to_markdown, plot_training_history,
+    save_action_tensor_json, save_q_values, print_policy
+)
+
+# Parameters
+NUM_EPISODES = 5000
+EPSILON = 0.1
+ALPHA = agent.ALPHA
+GAMMA = agent.GAMMA
+STEP_COST = agent.STEP_COST
+GOAL_REWARD = agent.GOAL_REWARD
+NET_GOAL_REWARD = agent.NET_GOAL_REWARD
+ACTIONS = agent.ACTIONS
+ACTION_MAP = agent.ACTION_MAP
+
+
+def initialize_q_values():
+    """
+    Initialize Q-values for all state-action pairs.
+    
+    Q[((x,y), action)] = 0 for all valid grid positions and actions
+    
+    Returns:
+        dict: Q-value dictionary
+    """
+    Q = {}
+    for x in range(5):
+        for y in range(5):
+            for action in ACTIONS:
+                Q[((x, y), action)] = 0.0
+    return Q
+
+
+def select_action_epsilon_greedy(x, y, Q, epsilon=EPSILON):
+    """
+    Select an action using ε-greedy strategy.
+    
+    With probability:
+    - (1 - ε): Select action with highest Q-value (exploitation)
+    - ε: Select random action (exploration)
+    
+    Args:
+        x, y: Current state coordinates
+        Q: Q-value dictionary
+        epsilon: Exploration rate
+        
+    Returns:
+        str: Selected action ('u', 'd', 'l', 'r')
+    """
+    if random.random() < epsilon:
+        # Exploration: random action
+        return random.choice(ACTIONS)
+    else:
+        # Exploitation: best Q-value
+        q_values = []
+        for action in ACTIONS:
+            q_val = Q.get(((x, y), action), 0.0)
+            q_values.append(q_val)
+        
+        # Get action with maximum Q-value
+        max_q = max(q_values)
+        best_actions = [ACTIONS[i] for i in range(len(ACTIONS)) if q_values[i] == max_q]
+        return random.choice(best_actions)
+
+
+def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON, alpha=ALPHA):
+    """
+    Main Q-learning training loop.
+    
+    Updates Q-values online: Q(s,a) ← Q(s,a) + α[r + γ max Q(s',a') - Q(s,a)]
+    
+    Args:
+        num_episodes: Number of training episodes
+        epsilon: Exploration rate
+        alpha: Learning rate
+        
+    Returns:
+        tuple: (Q_values dict, training_history dict)
+    """
+    Q = initialize_q_values()
+    
+    # Training history tracking
+    training_history = {
+        'episode_rewards': [],
+        'episode_visited_pairs': []
+    }
+    
+    print("\n" + "=" * 60)
+    print("Q-LEARNING TRAINING")
+    print("=" * 60)
+    print(f"Episodes: {num_episodes}, Learning rate (α): {alpha}, Epsilon (ε): {epsilon}")
+    print()
+    
+    for episode_num in range(num_episodes):
+        # Initialize episode
+        x, y = map0.start_point
+        episode_reward = 0
+        visited_pairs = set()
+        
+        # Run one episode until goal or timeout
+        for step in range(1000):  # Max 1000 steps per episode
+            # Record visited state-action pair
+            action = select_action_epsilon_greedy(x, y, Q, epsilon)
+            visited_pairs.add(((x, y), action))
+            
+            # Take action in environment (stochastic)
+            prev_x, prev_y = x, y
+            x, y = agent.get_next_state_stochastic(prev_x, prev_y, action)
+            
+            # Calculate reward
+            reward = agent.reward_calc(x, y)
+            episode_reward += reward
+            
+            # Q-learning update: Q(s,a) ← Q(s,a) + α[r + γ max Q(s',a') - Q(s,a)]
+            old_q = Q[((prev_x, prev_y), action)]
+            
+            # Get max Q-value for next state
+            max_q_next = max(Q[((x, y), a)] for a in ACTIONS)
+            
+            # TD update
+            td_error = reward + GAMMA * max_q_next - old_q
+            Q[((prev_x, prev_y), action)] = old_q + alpha * td_error
+            
+            # Check if reached goal
+            if (x, y) == map0.end_point:
+                break
+        
+        # Record episode history
+        training_history['episode_rewards'].append(episode_reward)
+        training_history['episode_visited_pairs'].append(len(visited_pairs))
+        
+        # Progress update every 100 episodes
+        if (episode_num + 1) % 500 == 0:
+            print(f"Episode {episode_num+1}/{num_episodes}: Reward={episode_reward:.2f}, "
+                  f"Visited pairs={len(visited_pairs)}")
+    
+    print(f"✓ Training complete after {num_episodes} episodes\n")
+    
+    return Q, training_history
+
+
+def extract_policy_from_q(Q):
+    """
+    Extract the deterministic policy from Q-values.
+    
+    For each state, select the action with highest Q-value.
+    
+    Args:
+        Q: Q-value dictionary
+        
+    Returns:
+        np.ndarray: 5×5 array of action indices
+    """
+    policy = np.zeros((5, 5), dtype=int)
+    
+    for x in range(5):
+        for y in range(5):
+            # Get all Q-values for this state
+            q_values = []
+            for action in ACTIONS:
+                q_val = Q.get(((x, y), action), 0.0)
+                q_values.append(q_val)
+            
+            # Select action with max Q-value
+            best_action_idx = np.argmax(q_values)
+            policy[y, x] = best_action_idx
+    
+    # Mark special cells
+    for obs in map0.road_blocking:
+        policy[obs[1], obs[0]] = 4  # Obstacle marker
+    policy[map0.end_point[1], map0.end_point[0]] = -1  # Goal marker
+    
+    return policy
+
+
+def test_policy(policy, num_tests=10, max_steps=100):
+    """
+    Test the learned policy deterministically.
+    
+    Args:
+        policy: 5×5 array of action indices
+        num_tests: Number of test runs
+        max_steps: Maximum steps per test
+        
+    Returns:
+        tuple: (average_return, success_count)
+    """
+    total_return = 0
+    success_count = 0
+    
+    for test in range(num_tests):
+        x, y = map0.start_point
+        test_return = 0
+        
+        for step in range(max_steps):
+            action_idx = policy[y, x]
+            if action_idx < 0 or action_idx >= 4:
+                break
+            
+            action = ACTIONS[action_idx]
+            x, y = agent.get_next_state_stochastic(x, y, action)
+            test_return += agent.reward_calc(x, y)
+            
+            if (x, y) == map0.end_point:
+                success_count += 1
+                break
+        
+        total_return += test_return
+    
+    avg_return = total_return / num_tests if num_tests > 0 else 0
+    return avg_return, success_count
+
+
+def compare_policies(q_learning_policy, optimal_policy, mc_policy):
+    """
+    Compare learned policies (Q-learning vs Optimal vs Monte Carlo).
+    
+    Args:
+        q_learning_policy: 5×5 array from Q-learning
+        optimal_policy: 5×5 array from Task 1 optimal
+        mc_policy: 5×5 array from Task 2 Monte Carlo
+    """
+    print("=" * 60)
+    print("POLICY COMPARISON")
+    print("=" * 60)
+    
+    # Count matching actions (excluding obstacles and goal)
+    matches_optimal = 0
+    matches_mc = 0
+    total_valid = 0
+    
+    for x in range(5):
+        for y in range(5):
+            cell_val = q_learning_policy[y, x]
+            # Skip obstacles and goal
+            if cell_val < 0 or cell_val >= 4:
+                continue
+            
+            total_valid += 1
+            
+            if optimal_policy[y, x] == cell_val:
+                matches_optimal += 1
+            
+            if mc_policy[y, x] == cell_val:
+                matches_mc += 1
+    
+    if total_valid > 0:
+        pct_optimal = 100 * matches_optimal / total_valid
+        pct_mc = 100 * matches_mc / total_valid
+        
+        print(f"Q-Learning vs Optimal Policy: {matches_optimal}/{total_valid} ({pct_optimal:.1f}%)")
+        print(f"Q-Learning vs Monte Carlo Policy: {matches_mc}/{total_valid} ({pct_mc:.1f}%)")
+    
+    print()
+
+
+def main():
+    """Main execution for Task 3: Q-Learning"""
+    
+    print("\n" + "=" * 60)
+    print("TASK 3: Q-LEARNING WITH UNKNOWN MODEL")
+    print("=" * 60)
+    
+    # ===== Q-LEARNING TRAINING =====
+    Q_values, training_history = q_learning(NUM_EPISODES, EPSILON, ALPHA)
+    
+    # ===== EXTRACT POLICY =====
+    q_learning_policy = extract_policy_from_q(Q_values)
+    
+    print("=" * 60)
+    print("LEARNED POLICY")
+    print("=" * 60)
+    print_policy(q_learning_policy)
+    
+    # ===== LOAD OPTIMAL POLICY (from Task 1) =====
+    try:
+        with open("../task1/visualization/ValueIteration_Optimal_action_tensor.json", 'r') as f:
+            task1_data = json.load(f)
+            # Task 1 JSON has "action_tensor" key
+            if isinstance(task1_data, dict) and "action_tensor" in task1_data:
+                optimal_policy_list = task1_data["action_tensor"]
+            else:
+                optimal_policy_list = task1_data
+            optimal_policy = np.array(optimal_policy_list, dtype=int)
+    except (FileNotFoundError, TypeError, KeyError) as e:
+        print(f"Warning: Could not load Task 1 optimal policy: {e}")
+        optimal_policy = np.zeros((5, 5), dtype=int)
+    
+    # ===== LOAD MONTE CARLO POLICY (from Task 2) =====
+    try:
+        with open("../task2/visualization/MonteCarlo_Learned_action_tensor.json", 'r') as f:
+            task2_data = json.load(f)
+            # Task 2 JSON should be direct array
+            if isinstance(task2_data, dict) and "action_tensor" in task2_data:
+                mc_policy_list = task2_data["action_tensor"]
+            else:
+                mc_policy_list = task2_data
+            mc_policy = np.array(mc_policy_list, dtype=int)
+    except (FileNotFoundError, TypeError, KeyError) as e:
+        print(f"Warning: Could not load Task 2 Monte Carlo policy: {e}")
+    
+    # ===== POLICY COMPARISON =====
+    if optimal_policy.size > 0 and mc_policy.size > 0:
+        compare_policies(q_learning_policy, optimal_policy, mc_policy)
+    
+    # ===== TEST POLICY =====
+    print("=" * 60)
+    print("POLICY TESTING (10 random runs)")
+    print("=" * 60)
+    avg_return, success_count = test_policy(q_learning_policy)
+    print(f"Average return: {avg_return:.2f}")
+    print(f"Success rate: {success_count}/10 ({100*success_count/10:.0f}%)")
+    print()
+    
+    # ===== RESULTS EXPORT =====
+    print("=" * 60)
+    print("RESULTS EXPORT")
+    print("=" * 60)
+    
+    os.makedirs("./visualization/", exist_ok=True)
+    
+    # Export action tensor to JSON
+    print("📋 Exporting action tensors to JSON format...")
+    json_path = save_action_tensor_json(Q_values, q_learning_policy, "QLearning")
+    print(f"✓ Saved action tensor to: {json_path}")
+    
+    # Export Q-values to JSON
+    q_path = save_q_values(Q_values, "QLearning")
+    print(f"✓ Saved Q-values to: {q_path}")
+    
+    # Export to markdown
+    print("📊 Exporting action tensors to Markdown format...")
+    markdown_content = action_tensor_to_markdown(q_learning_policy, "Q-Learning Learned Policy")
+    
+    with open("./visualization/task3_policies.md", 'w') as f:
+        f.write(markdown_content)
+    print(f"✓ Saved policies to: ./visualization/task3_policies.md")
+    
+    # Plot training history
+    print("📈 Generating training history plots...")
+    fig = plot_training_history(training_history, "Q-Learning")
+    plot_path = "./visualization/QLearning_Training_training_history.png"
+    fig.savefig(plot_path, dpi=150, bbox_inches='tight')
+    print(f"✓ Plot saved to: {plot_path}")
+    
+    # Save summary
+    print("📋 Creating summary report...")
+    summary = {
+        "algorithm": "Q-Learning",
+        "num_episodes": NUM_EPISODES,
+        "learning_rate_alpha": ALPHA,
+        "exploration_rate_epsilon": EPSILON,
+        "discount_factor_gamma": GAMMA,
+        "final_avg_reward": float(np.mean(training_history['episode_rewards'][-100:])),
+        "total_training_reward": float(np.sum(training_history['episode_rewards'])),
+        "max_episode_reward": float(np.max(training_history['episode_rewards'])),
+        "min_episode_reward": float(np.min(training_history['episode_rewards'])),
+        "test_avg_return": float(avg_return),
+        "test_success_rate": int(success_count)
+    }
+    
+    with open("./visualization/task3_summary.json", 'w') as f:
+        json.dump(summary, f, indent=2)
+    print(f"✓ Saved summary to: ./visualization/task3_summary.json")
+    
+    print()
+    print("=" * 60)
+    print("TASK 3 COMPLETE")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    # Change to script directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_dir)
+    
+    main()
