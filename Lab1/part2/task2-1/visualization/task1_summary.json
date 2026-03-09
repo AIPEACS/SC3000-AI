@@ -1,0 +1,96 @@
+{
+  "task": "Task 1: Planning with Known Environment Model",
+  "discount_factor": 0.9,
+  "step_cost": -1,
+  "goal_reward": 10,
+  "convergence": {
+    "value_iteration_iterations": 9,
+    "policy_iteration_iterations": 3
+  },
+  "testing": {
+    "value_iteration": {
+      "steps_to_goal": 8,
+      "total_reward": 2.0,
+      "path": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          4,
+          4
+        ]
+      ]
+    },
+    "policy_iteration": {
+      "steps_to_goal": 8,
+      "total_reward": 2.0,
+      "path": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          4,
+          4
+        ]
+      ]
+    }
+  }
+}
