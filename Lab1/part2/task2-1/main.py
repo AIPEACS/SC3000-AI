@@ -20,7 +20,8 @@ import json
 import numpy as np
 from agent import (
     STEP_COST, GOAL_REWARD, NET_GOAL_REWARD, GAMMA, 
-    ACTIONS, ACTION_MAP, reward_calc, get_next_state, calculate_final_reward
+    ACTIONS, ACTION_MAP, reward_calc, get_next_state, calculate_final_reward,
+    get_transition_outcomes
 )
 import scene_map as map0
 from visualization import (
@@ -132,10 +133,10 @@ def value_iteration(max_iterations=1000, theta=1e-6):
                 # Compute Q-values for all actions at this state
                 q_values = []
                 for action in ACTIONS:
-                    next_x, next_y = get_next_state(x, y, action)
-                    # Deterministic transition: P(s'|s,a) = 1
-                    # Q(s,a) = R(s,a,s') + γV(s')  -- reward is for entering next state
-                    q_value = reward_calc(next_x, next_y) + GAMMA * V_old[(next_x, next_y)]
+                    # Stochastic transition: Q(s,a) = Σ P(s'|s,a)[R(s') + γV(s')]
+                    q_value = 0
+                    for prob, (nx, ny) in get_transition_outcomes(x, y, action):
+                        q_value += prob * (reward_calc(nx, ny) + GAMMA * V_old[(nx, ny)])
                     q_values.append(q_value)
                 
                 # V(s) = max_a Q(s,a)
@@ -163,8 +164,9 @@ def value_iteration(max_iterations=1000, theta=1e-6):
             
             q_values = []
             for action in ACTIONS:
-                next_x, next_y = get_next_state(x, y, action)
-                q_value = reward_calc(next_x, next_y) + GAMMA * V[(next_x, next_y)]
+                q_value = 0
+                for prob, (nx, ny) in get_transition_outcomes(x, y, action):
+                    q_value += prob * (reward_calc(nx, ny) + GAMMA * V[(nx, ny)])
                 q_values.append(q_value)
             
             policy_deterministic[(x, y)] = int(np.argmax(q_values))
@@ -211,9 +213,10 @@ def policy_evaluation(policy, max_iterations=1000, theta=1e-6):
                     action = ACTIONS[action_idx]
                     action_prob = policy[(x, y)][action_idx]
                     
-                    next_x, next_y = get_next_state(x, y, action)
-                    # Q^π(s,a) = R(s') + γV^π(s')  -- reward is for entering next state
-                    q_value = reward_calc(next_x, next_y) + GAMMA * V_old[(next_x, next_y)]
+                    # Q^π(s,a) = Σ P(s'|s,a)[R(s') + γV^π(s')]
+                    q_value = 0
+                    for prob, (nx, ny) in get_transition_outcomes(x, y, action):
+                        q_value += prob * (reward_calc(nx, ny) + GAMMA * V_old[(nx, ny)])
                     value += action_prob * q_value
                 
                 V[(x, y)] = value
@@ -253,8 +256,9 @@ def policy_improvement(V):
             # Compute Q-values for all actions
             q_values = []
             for action in ACTIONS:
-                next_x, next_y = get_next_state(x, y, action)
-                q_value = reward_calc(next_x, next_y) + GAMMA * V[(next_x, next_y)]
+                q_value = 0
+                for prob, (nx, ny) in get_transition_outcomes(x, y, action):
+                    q_value += prob * (reward_calc(nx, ny) + GAMMA * V[(nx, ny)])
                 q_values.append(q_value)
             
             # Choose greedy action

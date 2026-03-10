@@ -5,7 +5,9 @@ This module implements two planning algorithms for the grid world:
 1. Value Iteration
 2. Policy Iteration
 
-Both algorithms assume the environment dynamics are fully known and deterministic.
+The agent KNOWS the stochastic transition probabilities:
+- 0.8 probability: Execute intended action
+- 0.1 probability each: Execute one of two perpendicular actions
 
 Parameters:
 - Grid size: 5 × 5
@@ -15,6 +17,7 @@ Parameters:
 - Step cost: -1
 - Goal reward: +10 (total = 10 - 1 = 9 net reward for reaching goal)
 - Discount factor: γ = 0.9
+- Transition probabilities: P_intended=0.8, P_perp=0.1 each
 """
 
 import scene_map as map0
@@ -48,10 +51,14 @@ def reward_calc(x=0, y=0):
         return STEP_COST
 
 
+# Transition probabilities (known to the agent in Task 1)
+P_INTENDED = 0.8
+P_PERPENDICULAR = 0.1  # Each of the two perpendicular directions
+
+
 def get_next_state(x, y, action):
     """
-    Deterministic transition function for Task 1.
-    Given a state and action, return the next state.
+    Deterministic transition: execute action exactly as intended.
     
     Args:
         x, y: Current position
@@ -61,6 +68,47 @@ def get_next_state(x, y, action):
         tuple: Next state (x', y')
     """
     return map0.move_function_at_position(x, y, action)
+
+
+def get_perpendicular_actions(action):
+    """
+    Get the two perpendicular actions for a given action.
+    
+    Args:
+        action: Reference action ('u', 'd', 'l', 'r')
+        
+    Returns:
+        list: Two perpendicular actions
+    """
+    if action in ['u', 'd']:
+        return ['l', 'r']
+    else:
+        return ['u', 'd']
+
+
+def get_transition_outcomes(x, y, action):
+    """
+    Return all possible (probability, next_state) outcomes for taking
+    an action in the stochastic environment.
+    
+    The agent knows:
+      - 0.8: intended action executes
+      - 0.1: slip to perpendicular direction 1
+      - 0.1: slip to perpendicular direction 2
+    
+    Args:
+        x, y: Current position
+        action: Intended action ('u', 'd', 'l', 'r')
+        
+    Returns:
+        list of (prob, (nx, ny)): Three transitions
+    """
+    perp = get_perpendicular_actions(action)
+    return [
+        (P_INTENDED, map0.move_function_at_position(x, y, action)),
+        (P_PERPENDICULAR, map0.move_function_at_position(x, y, perp[0])),
+        (P_PERPENDICULAR, map0.move_function_at_position(x, y, perp[1])),
+    ]
 
 
 def calculate_final_reward(path):
