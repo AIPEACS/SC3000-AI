@@ -204,9 +204,8 @@ def monte_carlo_control(num_episodes=1000, epsilon=0.1):
                 # Update Q-value as average of returns
                 Q[(state, action)] = np.mean(returns[(state, action)])
         
-        # Log training history every 10 episodes
-        if (episode_num + 1) % 10 == 0:
-            avg_reward = np.mean([episode_reward for _ in range(1)])  # Placeholder
+        # Progress update every 500 episodes (plus first and last)
+        if (episode_num + 1) % 500 == 0 or episode_num == 0 or episode_num == num_episodes - 1:
             visited_states = len(visited_pairs)
             print(f"Episode {episode_num + 1}/{num_episodes}: Reward={episode_reward:.2f}, Visited pairs={visited_states}")
         
@@ -296,7 +295,7 @@ def main():
     print("=" * 60 + "\n")
     
     # -------- MONTE CARLO CONTROL --------
-    Q, policy_mc, training_history, q_snapshots = monte_carlo_control(num_episodes=20000, epsilon=0.1)
+    Q, policy_mc, training_history, q_snapshots = monte_carlo_control(num_episodes=30000, epsilon=0.1)
     
     # -------- EXTRACT Q-VALUES --------
     q_state_action, v_state = q_values_to_array(Q)
