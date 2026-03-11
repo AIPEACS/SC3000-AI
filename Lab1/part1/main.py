@@ -22,12 +22,12 @@ def load_data(base_dir: Path):
 	return G, Coord, Dist, Cost
 
 
-# ── Task 1: Dijkstra (no energy constraint) ────────────────────────────────────
-def dijkstra(G, Dist, start, goal=None):
+# ── Task 1: UCS (no energy constraint) ────────────────────────────────────
+def ucs(G, Dist, start, goal=None):
 	"""
-	Standard Dijkstra — minimise total distance, no energy constraint.
+	Standard UCS — minimise total distance, no energy constraint.
 	If goal is None, runs to completion and returns the full distance map
-	(used to precompute the A* heuristic by calling dijkstra(G, Dist, GOAL)).
+	(used to precompute the A* heuristic by calling UCS(G, Dist, GOAL)).
 	"""
 	pq = [(0.0, start)]
 	best = {start: 0.0}
@@ -65,11 +65,11 @@ def dijkstra(G, Dist, start, goal=None):
 
 
 # ── Task 2: UCS with energy constraint ────────────────────────────────────────
-def dijkstra_constrained(G, Dist, Cost, start, goal, budget):
+def ucs_constrained(G, Dist, Cost, start, goal, budget):
 	"""
 	UCS (uninformed search) on expanded state (node, energy_used).
 
-	Priority  : accumulated distance (same as Dijkstra).
+	Priority  : accumulated distance (same as UCS).
 	Constraint: cumulative energy must not exceed `budget`.
 	Pruning   : Pareto dominance — at each node we keep a front of
 	            (dist, energy) labels.  A new label is discarded if any
@@ -155,7 +155,7 @@ def astar_constrained(G, Dist, Cost, start, goal, budget, h):
 	"""
 	A* on expanded state (node, energy_used).
 
-	Priority  : f = g + h(node), where h is the backward-Dijkstra
+	Priority  : f = g + h(node), where h is the backward-ucs
 	            heuristic (exact min-distance from node to goal, relaxed).
 	Constraint: cumulative energy must not exceed `budget`.
 	Pruning   : same Pareto-dominance labelling as UCS to handle the
@@ -220,10 +220,10 @@ def main():
 	G, Coord, Dist, Cost = load_data(base_dir)
 
 	# ── Task 1 ─────────────────────────────────────────────────────────────────
-	t1_dist, t1_path, t1_states = dijkstra(G, Dist, START, GOAL)
+	t1_dist, t1_path, t1_states = ucs(G, Dist, START, GOAL)
 
 	print("=" * 60)
-	print("Task 1: Dijkstra (relaxed — no energy constraint)")
+	print("Task 1: UCS (relaxed — no energy constraint)")
 	if t1_path:
 		print(f"Shortest path: {'->'.join(t1_path)}.")
 		print(f"Shortest distance: {t1_dist}.")
@@ -233,13 +233,13 @@ def main():
 		print("No path found.")
 
 	# ── Task 2 ─────────────────────────────────────────────────────────────────
-	t2_dist, t2_energy, t2_path, t2_states = dijkstra_constrained(
+	t2_dist, t2_energy, t2_path, t2_states = ucs_constrained(
 		G, Dist, Cost, START, GOAL, ENERGY_BUDGET
 	)
 
 	print()
 	print("=" * 60)
-	print("Task 2: Dijkstra (energy-constrained shortest path)")
+	print("Task 2: UCS (energy-constrained shortest path)")
 	if t2_path:
 		print(f"Shortest path: {'->'.join(t2_path)}.")
 		print(f"Shortest distance: {t2_dist}.")
@@ -251,16 +251,16 @@ def main():
 
 	# ── Task 3a ────────────────────────────────────────────────────────────────
 	# Heuristic: exact min-distance to GOAL on relaxed graph.
-	# Reuses dijkstra() with goal=None to get the full distance map.
-	h_dijkstra = dijkstra(G, Dist, GOAL)
+	# Reuses ucs() with goal=None to get the full distance map.
+	h_ucs = ucs(G, Dist, GOAL)
 
 	t3a_dist, t3a_energy, t3a_path, t3a_states = astar_constrained(
-		G, Dist, Cost, START, GOAL, ENERGY_BUDGET, h_dijkstra
+		G, Dist, Cost, START, GOAL, ENERGY_BUDGET, h_ucs
 	)
 
 	print()
 	print("=" * 60)
-	print("Task 3a: A* — heuristic: backward-Dijkstra (exact relaxed)")
+	print("Task 3a: A* — heuristic: backward-UCS (exact relaxed)")
 	if t3a_path:
 		print(f"Shortest path: {'->'.join(t3a_path)}.")
 		print(f"Shortest distance: {t3a_dist}.")
