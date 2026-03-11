@@ -295,93 +295,126 @@ def compare_policies(q_learning_policy, optimal_policy, mc_policy):
     print()
 
 
-def convergence_analysis(training_history, q_change_threshold=0.10):
+def convergence_analysis(training_history, window_episodes=500, stability_threshold=0.20):
     """
-    Simple convergence metric: track when mean |Q| stops changing significantly.
-    
-    For each snapshot, compute the mean absolute Q-value across all valid states and actions.
-    Converged when the % change in mean |Q| between consecutive snapshots < threshold.
-    
-    Args:
-        training_history: dict with 'q_snapshots' [(episode, {(x,y): {action: value}}), ...]
-        q_change_threshold: % change threshold (default 10%)
-    
-    Returns:
-        dict: convergence metrics (episodes and Q values) and convergence point
+    Convergence: all (s,a) pairs have stable Q-values within ±10% between consecutive windows.
+
+    Divides the run into non-overlapping windows of `window_episodes` episodes each.
+    For each (s,a), computes average Q in each window.
+    Converged when % change for ALL (s,a) < stability_threshold between consecutive windows.
+
+    Example: window_episodes=500 → compares ep[0-500] vs ep[500-1000] vs ep[1000-1500]...
     """
     snapshots = training_history['q_snapshots']
-    
+
     if len(snapshots) < 2:
         return {
-            'conv_episodes': [],
-            'conv_mean_q': [],
-            'convergence_ep': None,
-            'q_change_threshold': q_change_threshold,
+            'conv_episodes': [], 'stable_counts': [],
+            'convergence_ep': None, 'total_sa_pairs': 0,
+            'stability_threshold': stability_threshold, 'window_episodes': window_episodes,
         }
-    
+
     valid_states = [
         (x, y) for x in range(5) for y in range(5)
         if (x, y) not in map0.road_blocking and (x, y) != map0.end_point
     ]
-    
-    # Compute mean |Q| for each snapshot
-    mean_q_history = []
-    for ep, snap in snapshots:
-        mean_q = np.mean([
-            abs(snap[(x, y)][a])
-            for (x, y) in valid_states
-            for a in ACTIONS
-        ])
-        mean_q_history.append((ep, float(mean_q)))
-    
-    # Check convergence: % change between consecutive points
+    total_sa_pairs = len(valid_states) * len(ACTIONS)
+
+    # Snapshots are taken every 100 episodes → convert to snapshot count
+    snapshot_interval = 100
+    window_size = max(2, window_episodes // snapshot_interval)  # 500 ep → 5 snapshots
+
+    n_windows = len(snapshots) // window_size
+    if n_windows < 2:
+        return {
+            'conv_episodes': [], 'stable_counts': [],
+            'convergence_ep': None, 'total_sa_pairs': total_sa_pairs,
+            'stability_threshold': stability_threshold, 'window_episodes': window_episodes,
+        }
+
+    # Precompute avg Q per window for each (s,a)
+    window_avg_q = []
+    for w in range(n_windows):
+        start = w * window_size
+        end = (w + 1) * window_size
+        avg_q = {}
+        for s in valid_states:
+            for a in ACTIONS:
+                avg_q[(s, a)] = float(np.mean([snapshots[i][1][s][a] for i in range(start, end)]))
+        window_avg_q.append((snapshots[end - 1][0], avg_q))  # (episode, avg_q)
+
+    # Compare consecutive windows
     conv_episodes = []
-    conv_mean_q = []
+    stable_counts = []
     convergence_ep = None
-    
-    for i in range(len(mean_q_history)):
-        ep, mean_q = mean_q_history[i]
-        conv_episodes.append(ep)
-        conv_mean_q.append(mean_q)
-        
-        if i > 0:
-            _, prev_mean_q = mean_q_history[i - 1]
-            if prev_mean_q > 0:
-                pct_change = abs(mean_q - prev_mean_q) / prev_mean_q
+
+    for w in range(1, n_windows):
+        ep, curr_avg = window_avg_q[w]
+        _, prev_avg = window_avg_q[w - 1]
+
+        stable_count = 0
+        for sa in curr_avg:
+            prev_val = prev_avg[sa]
+            curr_val = curr_avg[sa]
+            if abs(prev_val) > 1e-6:
+                pct_change = abs(curr_val - prev_val) / abs(prev_val)
             else:
-                pct_change = 0
-            
-            if pct_change < q_change_threshold and convergence_ep is None:
-                convergence_ep = ep
-    
+                pct_change = 0 if abs(curr_val) < 1e-6 else 1
+            if pct_change < stability_threshold:
+                stable_count += 1
+
+        conv_episodes.append(ep)
+        stable_counts.append(stable_count)
+
+        if stable_count == total_sa_pairs and convergence_ep is None:
+            convergence_ep = ep
+
     return {
         'conv_episodes': conv_episodes,
-        'conv_mean_q': conv_mean_q,
+        'stable_counts': stable_counts,
         'convergence_ep': convergence_ep,
-        'q_change_threshold': q_change_threshold,
+        'total_sa_pairs': total_sa_pairs,
+        'stability_threshold': stability_threshold,
+        'window_episodes': window_episodes,
     }
 
 
 def plot_convergence(conv_data, title="Q-Learning Convergence Analysis"):
     """
-    Plot mean |Q-value| across all (s,a) pairs.
-    Mark the convergence point where % change drops below threshold.
+    Plot: # of stable (s,a) pairs over windows.
+    Mark when all pairs converge (reach 100% stable).
     """
+    if len(conv_data['conv_episodes']) == 0:
+        fig, ax = plt.subplots(1, 1, figsize=(11, 5))
+        ax.text(0.5, 0.5, "No convergence data (insufficient snapshots)",
+                ha='center', va='center', fontsize=12)
+        return fig
+    
     fig, ax = plt.subplots(1, 1, figsize=(11, 5))
     
-    ax.plot(conv_data['conv_episodes'], conv_data['conv_mean_q'],
-            color='steelblue', linewidth=1.5, marker='o', markersize=4, label='Mean |Q| across all (s,a)')
+    total = conv_data['total_sa_pairs']
+    pct_stable = [100 * c / total for c in conv_data['stable_counts']]
     
+    thresh_pct = conv_data['stability_threshold'] * 100
+
+    ax.plot(conv_data['conv_episodes'], pct_stable,
+            color='steelblue', linewidth=2.5, marker='o', markersize=5, label='% of (s,a) pairs stable')
+    ax.axhline(100, color='gray', linestyle=':', linewidth=1, alpha=0.5, label='100% stable (converged)')
+
     if conv_data['convergence_ep']:
-        ax.axvline(conv_data['convergence_ep'], color='red', linestyle='--', linewidth=2,
-                   label=f"Converged at episode {conv_data['convergence_ep']}")
-        # Mark the convergence point
+        ax.axvline(conv_data['convergence_ep'], color='red', linestyle='-', linewidth=3,
+                   zorder=5, label=f"Converged at ep {conv_data['convergence_ep']}")
         i = conv_data['conv_episodes'].index(conv_data['convergence_ep'])
-        ax.plot(conv_data['convergence_ep'], conv_data['conv_mean_q'][i], 'r*', markersize=15)
-    
+        ax.plot(conv_data['convergence_ep'], pct_stable[i], 'r*', markersize=20, zorder=6)
+    else:
+        ax.text(0.98, 0.05, 'No convergence detected', transform=ax.transAxes,
+                ha='right', va='bottom', fontsize=10, color='red',
+                bbox=dict(facecolor='lightyellow', edgecolor='red', boxstyle='round,pad=0.3'))
+
     ax.set_xlabel('Episode (snapshot every 100 ep)', fontsize=11)
-    ax.set_ylabel('Mean |Q-value|', fontsize=11)
-    ax.set_title(f"{title}\n(Threshold: {conv_data['q_change_threshold']*100:.0f}% change between snapshots)", 
+    ax.set_ylabel(f'% of (s,a) pairs with stable Q (±{thresh_pct:.0f}% change)', fontsize=11)
+    ax.set_ylim([0, 105])
+    ax.set_title(f"{title}\nWindow size: {conv_data['window_episodes']} ep | Threshold: {conv_data['stability_threshold']*100:.0f}% change",
                  fontsize=12, fontweight='bold')
     ax.legend(fontsize=10, loc='best')
     ax.grid(True, alpha=0.3)
@@ -391,19 +424,21 @@ def plot_convergence(conv_data, title="Q-Learning Convergence Analysis"):
 
 
 def _convergence_md_section(conv_data):
-    """Build a MD section summarising convergence speed analysis."""
+    """Build MD section: when all (s,a) pairs have stable Q within ±10% windows."""
     lines = [
         "\n## Convergence Speed Analysis",
         "",
-        "**Metric**: Mean absolute Q-value stability (% change between snapshots)",
+        "**Metric**: All (s,a) pairs have Q-values stable within ±10% between 500-snapshot windows",
         "",
-        f"**Threshold**: {conv_data['q_change_threshold']*100:.0f}% change in mean |Q|",
+        f"**Total state-action pairs**: {conv_data['total_sa_pairs']}",
+        f"**Window size**: {conv_data['window_episodes']} episodes",
+        f"**Stability threshold**: ±{conv_data['stability_threshold']*100:.0f}%",
         "",
     ]
     if conv_data['convergence_ep']:
-        lines.append(f"**Converged at episode**: `{conv_data['convergence_ep']}`")
+        lines.append(f"**Convergence point**: Episode `{conv_data['convergence_ep']}`")
     else:
-        lines.append("**Converged at episode**: Not detected (Q-values still changing > threshold)")
+        lines.append("**Convergence point**: Not detected (not all (s,a) pairs stabilized)")
     lines += [
         "",
         "See `QLearning_Convergence_Analysis.png` for plot.",
@@ -530,6 +565,10 @@ def main():
     print("📊 Exporting action tensors to Markdown format...")
     markdown_content = action_tensor_to_markdown(q_learning_policy, "Q-Learning Learned Policy")
     
+    # Convergence analysis (must run before markdown export)
+    print("📈 Running convergence speed analysis...")
+    conv_data = convergence_analysis(training_history)
+    
     with open("./visualization/task3_policies.md", 'w') as f:
         f.write(markdown_content)
         f.write(_similarity_md_section(q_learning_policy))
@@ -553,9 +592,7 @@ def main():
     plt.close(fig_q)
     print(f"✓ Q-value history plot saved to: {q_plot_path}")
 
-    # Convergence analysis
-    print("📈 Running convergence speed analysis...")
-    conv_data = convergence_analysis(training_history)
+    # Plot convergence
     fig_conv = plot_convergence(conv_data, "Q-Learning Convergence Analysis")
     conv_plot_path = "./visualization/QLearning_Convergence_Analysis.png"
     fig_conv.savefig(conv_plot_path, dpi=150, bbox_inches='tight')
@@ -576,9 +613,9 @@ def main():
         "min_episode_reward": float(np.min(training_history['episode_rewards'])),
         "test_avg_return": float(avg_return),
         "test_success_rate": int(success_count),
-        "convergence_reward_plateau_ep": conv_data['reward_converge_ep'],
-        "convergence_td_error_ep": conv_data['td_converge_ep'],
-        "convergence_q_delta_ep": conv_data['q_converge_ep'],
+        "convergence_episode": conv_data['convergence_ep'],
+        "convergence_stable_pairs": conv_data.get('total_sa_pairs', 0),
+        "convergence_threshold_pct": conv_data['stability_threshold'],
     }
     
     with open("./visualization/task3_summary.json", 'w') as f:
