@@ -10,6 +10,7 @@ NTU 2026 Sem 2.
 ---
 
 ## Task 2.2 — Monte Carlo Q-Learning
+- Author: Allen
 
 ### Standard Method
 
