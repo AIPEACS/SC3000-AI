@@ -303,7 +303,7 @@ def main():
     print("=" * 60 + "\n")
 
     Q, policy_mc, training_history, q_snapshots = monte_carlo_control(
-        num_episodes=60000, epsilon=0.1
+        num_episodes=30000, epsilon=0.1
     )
 
     q_state_action, v_state = q_values_to_array(Q)
