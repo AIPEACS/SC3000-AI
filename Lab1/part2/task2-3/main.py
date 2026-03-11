@@ -295,146 +295,97 @@ def compare_policies(q_learning_policy, optimal_policy, mc_policy):
     print()
 
 
-def convergence_analysis(training_history, reward_window=500, td_threshold=0.05, q_delta_threshold=0.01):
+def convergence_analysis(training_history, q_change_threshold=0.10):
     """
-    Analyse convergence speed of the Q-learning run.
-
-    Metrics computed:
-    - Rolling mean reward: smoothed over `reward_window` episodes
-    - Reward plateau episode: first episode where rolling reward stabilises
-    - TD error convergence: first episode where mean |TD error| < td_threshold
-    - Q-value delta convergence: first snapshot episode where mean |ΔQ| < q_delta_threshold
-
+    Simple convergence metric: track when mean |Q| stops changing significantly.
+    
+    For each snapshot, compute the mean absolute Q-value across all valid states and actions.
+    Converged when the % change in mean |Q| between consecutive snapshots < threshold.
+    
+    Args:
+        training_history: dict with 'q_snapshots' [(episode, {(x,y): {action: value}}), ...]
+        q_change_threshold: % change threshold (default 10%)
+    
     Returns:
-        dict: convergence metrics and raw series for plotting
+        dict: convergence metrics (episodes and Q values) and convergence point
     """
-    rewards = np.array(training_history['episode_rewards'])
-    td_errors = np.array(training_history.get('episode_mean_td_errors', []))
     snapshots = training_history['q_snapshots']
-
-    # Rolling mean reward
-    kernel = np.ones(reward_window) / reward_window
-    rolling_reward = np.convolve(rewards, kernel, mode='valid')
-    rolling_episodes = np.arange(reward_window, reward_window + len(rolling_reward))
-
-    # Reward plateau: first point where |Δrolling| < 0.5% of total range
-    reward_range = np.max(rolling_reward) - np.min(rolling_reward)
-    reward_converge_ep = None
-    if reward_range > 0:
-        for i in range(1, len(rolling_reward)):
-            if abs(rolling_reward[i] - rolling_reward[i - 1]) / reward_range < 0.005:
-                reward_converge_ep = int(rolling_episodes[i])
-                break
-
-    # TD error convergence
-    td_converge_ep = None
-    if len(td_errors) > 0:
-        for i, e in enumerate(td_errors):
-            if e < td_threshold:
-                td_converge_ep = i + 1
-                break
-
-    # Q-value delta between consecutive snapshots
-    q_deltas = []
-    q_delta_episodes = []
+    
+    if len(snapshots) < 2:
+        return {
+            'conv_episodes': [],
+            'conv_mean_q': [],
+            'convergence_ep': None,
+            'q_change_threshold': q_change_threshold,
+        }
+    
     valid_states = [
         (x, y) for x in range(5) for y in range(5)
         if (x, y) not in map0.road_blocking and (x, y) != map0.end_point
     ]
-    for i in range(1, len(snapshots)):
-        ep, snap = snapshots[i]
-        _, prev_snap = snapshots[i - 1]
-        delta = np.mean([
-            abs(snap[(x, y)][a] - prev_snap[(x, y)][a])
+    
+    # Compute mean |Q| for each snapshot
+    mean_q_history = []
+    for ep, snap in snapshots:
+        mean_q = np.mean([
+            abs(snap[(x, y)][a])
             for (x, y) in valid_states
             for a in ACTIONS
         ])
-        q_deltas.append(float(delta))
-        q_delta_episodes.append(ep)
-
-    q_converge_ep = None
-    for ep, delta in zip(q_delta_episodes, q_deltas):
-        if delta < q_delta_threshold:
-            q_converge_ep = ep
-            break
-
+        mean_q_history.append((ep, float(mean_q)))
+    
+    # Check convergence: % change between consecutive points
+    conv_episodes = []
+    conv_mean_q = []
+    convergence_ep = None
+    
+    for i in range(len(mean_q_history)):
+        ep, mean_q = mean_q_history[i]
+        conv_episodes.append(ep)
+        conv_mean_q.append(mean_q)
+        
+        if i > 0:
+            _, prev_mean_q = mean_q_history[i - 1]
+            if prev_mean_q > 0:
+                pct_change = abs(mean_q - prev_mean_q) / prev_mean_q
+            else:
+                pct_change = 0
+            
+            if pct_change < q_change_threshold and convergence_ep is None:
+                convergence_ep = ep
+    
     return {
-        'rolling_reward': rolling_reward,
-        'rolling_episodes': rolling_episodes,
-        'reward_converge_ep': reward_converge_ep,
-        'td_errors': td_errors,
-        'td_converge_ep': td_converge_ep,
-        'q_delta_episodes': q_delta_episodes,
-        'q_deltas': q_deltas,
-        'q_converge_ep': q_converge_ep,
-        'td_threshold': td_threshold,
-        'q_delta_threshold': q_delta_threshold,
+        'conv_episodes': conv_episodes,
+        'conv_mean_q': conv_mean_q,
+        'convergence_ep': convergence_ep,
+        'q_change_threshold': q_change_threshold,
     }
 
 
 def plot_convergence(conv_data, title="Q-Learning Convergence Analysis"):
     """
-    Plot convergence speed metrics:
-    - Top: rolling mean reward with plateau marker
-    - Middle: mean |TD error| per episode with threshold line
-    - Bottom: mean |ΔQ| per snapshot with threshold line
+    Plot mean |Q-value| across all (s,a) pairs.
+    Mark the convergence point where % change drops below threshold.
     """
-    has_td = len(conv_data['td_errors']) > 0
-    has_q = len(conv_data['q_deltas']) > 0
-    n_plots = 1 + int(has_td) + int(has_q)
-
-    fig, axes = plt.subplots(n_plots, 1, figsize=(11, 4 * n_plots))
-    if n_plots == 1:
-        axes = [axes]
-
-    ax_idx = 0
-
-    # --- Rolling reward ---
-    ax = axes[ax_idx]; ax_idx += 1
-    ax.plot(conv_data['rolling_episodes'], conv_data['rolling_reward'],
-            color='steelblue', linewidth=1.2, label=f"Rolling mean reward (window={len(conv_data['rolling_reward'][0:1])})")
-    if conv_data['reward_converge_ep']:
-        ax.axvline(conv_data['reward_converge_ep'], color='red', linestyle='--', linewidth=1,
-                   label=f"Plateau at ep {conv_data['reward_converge_ep']}")
-    ax.set_xlabel('Episode')
-    ax.set_ylabel('Mean Reward')
-    ax.set_title('Rolling Mean Reward')
-    ax.legend(fontsize=8)
+    fig, ax = plt.subplots(1, 1, figsize=(11, 5))
+    
+    ax.plot(conv_data['conv_episodes'], conv_data['conv_mean_q'],
+            color='steelblue', linewidth=1.5, marker='o', markersize=4, label='Mean |Q| across all (s,a)')
+    
+    if conv_data['convergence_ep']:
+        ax.axvline(conv_data['convergence_ep'], color='red', linestyle='--', linewidth=2,
+                   label=f"Converged at episode {conv_data['convergence_ep']}")
+        # Mark the convergence point
+        i = conv_data['conv_episodes'].index(conv_data['convergence_ep'])
+        ax.plot(conv_data['convergence_ep'], conv_data['conv_mean_q'][i], 'r*', markersize=15)
+    
+    ax.set_xlabel('Episode (snapshot every 100 ep)', fontsize=11)
+    ax.set_ylabel('Mean |Q-value|', fontsize=11)
+    ax.set_title(f"{title}\n(Threshold: {conv_data['q_change_threshold']*100:.0f}% change between snapshots)", 
+                 fontsize=12, fontweight='bold')
+    ax.legend(fontsize=10, loc='best')
     ax.grid(True, alpha=0.3)
-
-    # --- TD error ---
-    if has_td:
-        ax = axes[ax_idx]; ax_idx += 1
-        ax.plot(np.arange(1, len(conv_data['td_errors']) + 1), conv_data['td_errors'],
-                color='darkorange', linewidth=0.8, alpha=0.7, label='Mean |TD error|')
-        ax.axhline(conv_data['td_threshold'], color='gray', linestyle=':', linewidth=1,
-                   label=f"Threshold = {conv_data['td_threshold']}")
-        if conv_data['td_converge_ep']:
-            ax.axvline(conv_data['td_converge_ep'], color='red', linestyle='--', linewidth=1,
-                       label=f"Converged at ep {conv_data['td_converge_ep']}")
-        ax.set_xlabel('Episode')
-        ax.set_ylabel('Mean |TD Error|')
-        ax.set_title('TD Error Convergence')
-        ax.legend(fontsize=8)
-        ax.grid(True, alpha=0.3)
-
-    # --- Q-value delta ---
-    if has_q:
-        ax = axes[ax_idx]; ax_idx += 1
-        ax.plot(conv_data['q_delta_episodes'], conv_data['q_deltas'],
-                color='forestgreen', linewidth=1.2, label='Mean |ΔQ| between snapshots')
-        ax.axhline(conv_data['q_delta_threshold'], color='gray', linestyle=':', linewidth=1,
-                   label=f"Threshold = {conv_data['q_delta_threshold']}")
-        if conv_data['q_converge_ep']:
-            ax.axvline(conv_data['q_converge_ep'], color='red', linestyle='--', linewidth=1,
-                       label=f"Converged at ep {conv_data['q_converge_ep']}")
-        ax.set_xlabel('Episode')
-        ax.set_ylabel('Mean |ΔQ|')
-        ax.set_title('Q-Value Stability (Mean Absolute Change Between Snapshots)')
-        ax.legend(fontsize=8)
-        ax.grid(True, alpha=0.3)
-
-    fig.suptitle(title, fontsize=13, fontweight='bold')
+    
     plt.tight_layout()
     return fig
 
@@ -444,18 +395,18 @@ def _convergence_md_section(conv_data):
     lines = [
         "\n## Convergence Speed Analysis",
         "",
-        "| Metric | Converged at Episode |",
-        "|--------|---------------------|",
+        "**Metric**: Mean absolute Q-value stability (% change between snapshots)",
+        "",
+        f"**Threshold**: {conv_data['q_change_threshold']*100:.0f}% change in mean |Q|",
+        "",
     ]
-    lines.append(f"| Reward plateau (rolling mean) | "
-                 f"{'ep ' + str(conv_data['reward_converge_ep']) if conv_data['reward_converge_ep'] else 'Not detected'} |")
-    lines.append(f"| TD error < {conv_data['td_threshold']} | "
-                 f"{'ep ' + str(conv_data['td_converge_ep']) if conv_data['td_converge_ep'] else 'Not detected'} |")
-    lines.append(f"| Mean |ΔQ| < {conv_data['q_delta_threshold']} | "
-                 f"{'ep ' + str(conv_data['q_converge_ep']) if conv_data['q_converge_ep'] else 'Not detected'} |")
+    if conv_data['convergence_ep']:
+        lines.append(f"**Converged at episode**: `{conv_data['convergence_ep']}`")
+    else:
+        lines.append("**Converged at episode**: Not detected (Q-values still changing > threshold)")
     lines += [
         "",
-        "See `QLearning_Convergence_Analysis.png` for plots.",
+        "See `QLearning_Convergence_Analysis.png` for plot.",
         "",
     ]
     return "\n".join(lines) + "\n"
