@@ -2,12 +2,12 @@
 
 ## Configuration
 - Window size: 1000 most recent returns per (s,a)
-- Epsilon-greedy exploration: �� = 0.1
+- Epsilon-greedy exploration: ε = 0.1
 - Stochastic transitions: 0.8 intended, 0.1 each perpendicular.
 
 ## Learned Policy
 
-## Monte Carlo v2 �� Learned Policy
+## Monte Carlo v2  Learned Policy
 
 | Y\X | 0 | 1 | 2 | 3 | 4 |
 |-----|---|---|---|---|----|
