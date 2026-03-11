@@ -43,7 +43,12 @@ The standard cumulative method introduces two problems:
 
 To address both issues, I further improved the solution to average only over the **most recent 1000 returns**:
 
-$$Q^{\pi_k} = \begin{cases} \dfrac{1}{k}\displaystyle\sum_{i=1}^{k}G_i & \text{if } k \leq 1000 \\ \dfrac{1}{1000}\displaystyle\sum_{i=k-1000}^{k}G_i & \text{if } k > 1000 \end{cases}$$
+$$
+Q^{\pi_k} = \begin{cases}
+\dfrac{1}{k}\sum_{i=1}^{k}G_i & \text{if } k \leq 1000 \\
+\dfrac{1}{1000}\sum_{i=k-1000}^{k}G_i & \text{if } k > 1000
+\end{cases}
+$$
 
 A similar algorithmic idea can be found in other agent-related papers (Mnih et al., 2013).
 
