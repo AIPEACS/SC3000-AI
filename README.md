@@ -5,8 +5,9 @@ NTU 2026 Sem 2.
 ---
 
 ## Informortion
-- Contributor: Allen, Hung
-
+- Contributor: 
+  - Hung: Lab 1 Task 1
+  - Allen: Lab 1 Task 2
 ---
 
 ## Lab 1 Task 2.2 — Monte Carlo Q-Learning
