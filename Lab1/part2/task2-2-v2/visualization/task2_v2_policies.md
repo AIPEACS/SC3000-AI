@@ -1,27 +1,24 @@
-# Task 2: Monte Carlo Learning
+# Task 2-v2: Monte Carlo Learning (Sliding Window)
 
-## Problem
-5x5 Grid World with stochastic transitions. Unknown environment model.
-Stochastic transitions: 0.8 intended, 0.1 each perpendicular direction.
-Epsilon-greedy exploration with epsilon=0.1.
+## Configuration
+- Window size: 1000 most recent returns per (s,a)
+- Epsilon-greedy exploration: �� = 0.1
+- Stochastic transitions: 0.8 intended, 0.1 each perpendicular.
 
 ## Learned Policy
 
-## Monte Carlo - Learned Policy
+## Monte Carlo v2 �� Learned Policy
 
 | Y\X | 0 | 1 | 2 | 3 | 4 |
 |-----|---|---|---|---|----|
 | 4 | RIGHT | RIGHT | RIGHT | RIGHT | GOAL |
-| 3 | RIGHT | UP | OBS | UP | UP |
-| 2 | UP | RIGHT | RIGHT | UP | UP |
+| 3 | UP | UP | OBS | UP | UP |
+| 2 | UP | UP | RIGHT | UP | UP |
 | 1 | UP | UP | OBS | UP | UP |
 | 0 | RIGHT | RIGHT | RIGHT | UP | UP |
 
 ## Legend
-- `UP` = Move up
-- `DOWN` = Move down
-- `LEFT` = Move left
-- `RIGHT` = Move right
+- `UP` / `DOWN` / `LEFT` / `RIGHT` = action
 - `OBS` = Obstacle
 - `GOAL` = Goal state (4,4)
 
@@ -33,4 +30,4 @@ Epsilon-greedy exploration with epsilon=0.1.
 - **Similarity**: **90.9%**
 - **Mismatched states**:
   - (0,2) learned UP, optimal RIGHT
-  - (0,3) learned RIGHT, optimal UP
+  - (1,2) learned UP, optimal RIGHT

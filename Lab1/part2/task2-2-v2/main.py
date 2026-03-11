@@ -1,46 +1,66 @@
 """
-Task 2: Monte Carlo Learning with Unknown Transition Model
-===========================================================
-Main script for implementing Monte Carlo (MC) control using epsilon-greedy exploration.
+Task 2-v2: Monte Carlo Learning — Sliding-Window Returns
+=========================================================
+Identical to task2-2 except Q(s,a) is estimated from the most recent
+1000 returns only (a fixed-size deque) rather than every return ever seen.
 
-This script:
-1. Initializes Q-values and returns tracking
-2. Implements Episode generation with stochastic environment
-3. Runs Monte Carlo control (first-visit or every-visit)
-4. Tracks training metrics per episode
-5. Extracts learned policy and compares with Task 1
+Rationale:
+  Averaging all historical returns gives equal weight to samples collected
+  under very early (and very different) policies.  Keeping only the last
+  1000 returns per (s,a) pair discards stale data and lets the estimate
+  track the current near-optimal policy more faithfully.
+
+Changes vs task2-2/main.py:
+  - initialize_returns()  → uses collections.deque(maxlen=WINDOW)
+  - monte_carlo_control() → append() auto-pops the oldest entry once the
+                            window is full; np.mean() works unchanged.
+  - VIS_DIR               → points to task2-2-v2/visualization/
 """
 
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# ── shared code lives in task2-2 ──────────────────────────────────────────────
+_TASK22_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'task2-2')
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # part2/
+sys.path.insert(0, _TASK22_DIR)
+
 import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 import json
 import numpy as np
 import random
-from agent_task2 import (
-    STEP_COST, GOAL_REWARD, NET_GOAL_REWARD, GAMMA, 
+from collections import deque
+
+from agent_task2 import (  # type: ignore[import]
+    STEP_COST, GOAL_REWARD, NET_GOAL_REWARD, GAMMA,
     ACTIONS, ACTION_MAP, reward_calc, get_next_state_stochastic
 )
-import scene_map as map0
-from visualization_task2 import (
+import scene_map as map0  # type: ignore[import]
+import visualization_task2 as vis_mod  # type: ignore[import]
+
+# ── redirect all outputs to this folder ───────────────────────────────────────
+_V2_VIS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'visualization')
+_V2_DEBUG_VIS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'debug_visualization')
+os.makedirs(_V2_VIS_DIR, exist_ok=True)
+os.makedirs(_V2_DEBUG_VIS_DIR, exist_ok=True)
+vis_mod.VIS_DIR = _V2_VIS_DIR               # patch: plot_training_history / save_* functions
+vis_mod.DEBUG_VIS_DIR = _V2_DEBUG_VIS_DIR   # patch: plot_q_value_history
+
+from visualization_task2 import (  # type: ignore[import]
     VIS_DIR, print_policy, action_tensor_to_markdown,
-    save_policy_json, save_action_tensor_json, save_q_values, plot_training_history,
-    plot_q_value_history
+    save_policy_json, save_action_tensor_json, save_q_values,
+    plot_training_history, plot_q_value_history
 )
 
+# ==================== CONFIGURATION ====================
+
+WINDOW = 1000   # sliding-window size for return averaging
 
 # ==================== INITIALIZATION ====================
 
 def initialize_q_values():
-    """
-    Initialize Q(s,a) = 0 for all state-action pairs.
-    
-    Returns:
-        dict: Q-values keyed by ((x, y), action)
-    """
     Q = {}
     for x in range(5):
         for y in range(5):
@@ -51,26 +71,19 @@ def initialize_q_values():
 
 def initialize_returns():
     """
-    Initialize returns tracking for each state-action pair.
-    
-    Returns:
-        dict: Lists of returns keyed by ((x, y), action)
+    Each (s,a) gets a deque of at most WINDOW returns.
+    Once the deque is full, appending a new return automatically
+    pops the oldest one from the left.
     """
     returns = {}
     for x in range(5):
         for y in range(5):
             for action in ACTIONS:
-                returns[((x, y), action)] = []
+                returns[((x, y), action)] = deque(maxlen=WINDOW)
     return returns
 
 
 def initialize_visit_counts():
-    """
-    Initialize visit counts for each state-action pair.
-    
-    Returns:
-        dict: Visit counts keyed by ((x, y), action)
-    """
     visits = {}
     for x in range(5):
         for y in range(5):
@@ -78,137 +91,87 @@ def initialize_visit_counts():
                 visits[((x, y), action)] = 0
     return visits
 
-
 # ==================== EPISODE GENERATION ====================
 
 def select_action_epsilon_greedy(x, y, Q, epsilon=0.1):
-    """
-    Select action using epsilon-greedy strategy.
-    
-    Args:
-        x, y: Current state
-        Q: Q-value dictionary
-        epsilon: Exploration probability
-        
-    Returns:
-        str: Selected action
-    """
-    # Initialize missing state-actions if needed (defensive)
     for action in ACTIONS:
         if ((x, y), action) not in Q:
             Q[((x, y), action)] = 0.0
-    
+
     if random.random() < epsilon:
-        # Explore: select random action
         return random.choice(ACTIONS)
     else:
-        # Exploit: select best action
         q_values = [Q[((x, y), a)] for a in ACTIONS]
-        best_action_idx = np.argmax(q_values)
-        return ACTIONS[best_action_idx]
+        return ACTIONS[int(np.argmax(q_values))]
 
 
 def generate_episode(Q, epsilon=0.1, max_steps=1000):
-    """
-    Generate one complete episode following epsilon-greedy policy.
-    
-    Args:
-        Q: Q-value dictionary
-        epsilon: Exploration probability
-        max_steps: Maximum steps before timeout
-        
-    Returns:
-        tuple: (episode, total_reward)
-            - episode: List of (state, action, reward) tuples
-            - total_reward: Total reward for the episode
-    """
     x, y = map0.start_point
     episode = []
     total_reward = 0
-    
-    for step in range(max_steps):
+
+    for _ in range(max_steps):
         if (x, y) == map0.end_point:
             break
-        
-        # Select action using epsilon-greedy
         action = select_action_epsilon_greedy(x, y, Q, epsilon)
-        
-        # Take action in stochastic environment
         next_x, next_y = get_next_state_stochastic(x, y, action)
-        
-        # Calculate reward
         reward = reward_calc(next_x, next_y)
-        
-        # Record transition
         episode.append(((x, y), action, reward))
         total_reward += reward
-        
-        # Move to next state
         x, y = next_x, next_y
-    
+
     return episode, total_reward
 
-
-# ==================== MONTE CARLO CONTROL ====================
+# ==================== MONTE CARLO CONTROL (sliding window) ====================
 
 def monte_carlo_control(num_episodes=1000, epsilon=0.1):
     """
-    Monte Carlo Control - First-visit MC prediction and control.
-    
-    Args:
-        num_episodes: Number of episodes to train
-        epsilon: Exploration probability
-        
-    Returns:
-        tuple: (Q, policy, training_history)
-            - Q: Learned Q-value dictionary
-            - policy: 5x5 array of best actions
-            - training_history: List of metrics per episode
+    On-policy first-visit MC control with a sliding-window return estimate.
+
+    Q(s,a) = mean of the last WINDOW (≤1000) returns for (s,a).
+    Older returns are discarded automatically by the deque.
     """
     print("=" * 60)
-    print("MONTE CARLO CONTROL")
+    print(f"MONTE CARLO CONTROL  [sliding window = {WINDOW}]")
     print("=" * 60)
-    
+
     Q = initialize_q_values()
     returns = initialize_returns()
     visit_counts = initialize_visit_counts()
-    
-    training_history = []  # Track metrics per episode
-    q_snapshots = []       # Q-value snapshots every 100 episodes
-    
+
+    training_history = []
+    q_snapshots = []
+
     for episode_num in range(num_episodes):
-        # Generate episode
         episode, episode_reward = generate_episode(Q, epsilon)
-        
-        # Track training metrics
+
         visited_pairs = set()
-        
-        # First pass (forward): identify first occurrence of each (state, action)
+
+        # forward pass: first time each (s,a) appears
         first_visits = {}
         for t, (state, action, _) in enumerate(episode):
             if (state, action) not in first_visits:
                 first_visits[(state, action)] = t
-        
-        # Process episode (backwards for efficient G computation)
-        G = 0  # Return
+
+        # backward pass: efficient G computation
+        G = 0
         for t in range(len(episode) - 1, -1, -1):
             state, action, reward = episode[t]
             G = reward + GAMMA * G
-            
-            # First-visit: only update at the first occurrence (forward)
+
             if first_visits.get((state, action)) == t:
                 visited_pairs.add((state, action))
+
+                # deque automatically drops oldest entry when len > WINDOW
                 returns[(state, action)].append(G)
                 visit_counts[(state, action)] += 1
-                
-                # Update Q-value as average of returns
+
                 Q[(state, action)] = np.mean(returns[(state, action)])
-        
-        # Progress update every 500 episodes (plus first and last)
+
         if (episode_num + 1) % 500 == 0 or episode_num == 0 or episode_num == num_episodes - 1:
-            visited_states = len(visited_pairs)
-            print(f"Episode {episode_num + 1}/{num_episodes}: Reward={episode_reward:.2f}, Visited pairs={visited_states}")
-        
+            print(f"Episode {episode_num + 1}/{num_episodes}: "
+                  f"Reward={episode_reward:.2f}, Visited pairs={len(visited_pairs)}")
+
         training_history.append({
             'episode': episode_num + 1,
             'reward': episode_reward,
@@ -216,15 +179,14 @@ def monte_carlo_control(num_episodes=1000, epsilon=0.1):
             'epsilon': epsilon
         })
 
-        # Snapshot Q-values every 100 episodes
         if (episode_num + 1) % 100 == 0:
             snapshot = {
                 (x, y): {a: Q[((x, y), a)] for a in ACTIONS}
                 for x in range(5) for y in range(5)
             }
             q_snapshots.append((episode_num + 1, snapshot))
-    
-    # Extract deterministic policy from final Q-values
+
+    # deterministic policy from final Q
     policy = {}
     for x in range(5):
         for y in range(5):
@@ -233,51 +195,35 @@ def monte_carlo_control(num_episodes=1000, epsilon=0.1):
             elif (x, y) in map0.road_blocking:
                 policy[(x, y)] = 4
             else:
-                q_values = [Q[((x, y), a)] for a in ACTIONS]
-                policy[(x, y)] = int(np.argmax(q_values))
-    
+                policy[(x, y)] = int(np.argmax([Q[((x, y), a)] for a in ACTIONS]))
+
     print(f"\n✓ Training complete after {num_episodes} episodes\n")
     return Q, policy, training_history, q_snapshots
 
-
-# ==================== POLICY EXTRACTION & COMPARISON ====================
+# ==================== HELPERS ====================
 
 def q_values_to_array(Q):
-    """
-    Convert Q-value dictionary to arrays for analysis.
-    
-    Returns:
-        tuple: (q_state_action, v_state)
-    """
     q_state_action = np.zeros((5, 5, 4))
     v_state = np.zeros((5, 5))
-    
     for x in range(5):
         for y in range(5):
             for a_idx, action in enumerate(ACTIONS):
                 q_state_action[x, y, a_idx] = Q[((x, y), action)]
             v_state[x, y] = np.max(q_state_action[x, y, :])
-    
     return q_state_action, v_state
 
 
 def compare_policies(policy_mc, policy_optimal):
-    """
-    Compare learned policy with optimal policy from Task 1.
-    """
     differences = 0
     total_states = 0
-    
     for x in range(5):
         for y in range(5):
             if (x, y) not in map0.road_blocking and (x, y) != map0.end_point:
                 total_states += 1
                 if policy_mc[(x, y)] != policy_optimal[(x, y)]:
                     differences += 1
-    
     match_rate = ((total_states - differences) / total_states * 100) if total_states > 0 else 0
-    
-    print(f"Policy Comparison (MC vs Optimal):")
+    print(f"Policy Comparison (MC-v2 vs Optimal):")
     print(f"  - Total states: {total_states}")
     print(f"  - Differences: {differences}")
     print(f"  - Match rate: {match_rate:.1f}%")
@@ -328,78 +274,62 @@ def _similarity_md_section(policy):
     lines.append("")
     return "\n".join(lines) + "\n"
 
-
-# ==================== MAIN EXECUTION ====================
+# ==================== MAIN ====================
 
 def main():
-    """
-    Main execution: Train with Monte Carlo and compare with Task 1.
-    """
     print("\n" + "=" * 60)
-    print("TASK 2: MONTE CARLO LEARNING WITH UNKNOWN MODEL")
+    print("TASK 2-v2: MC LEARNING — SLIDING-WINDOW RETURNS")
     print("=" * 60 + "\n")
-    
-    # -------- MONTE CARLO CONTROL --------
-    Q, policy_mc, training_history, q_snapshots = monte_carlo_control(num_episodes=30000, epsilon=0.1)
-    
-    # -------- EXTRACT Q-VALUES --------
+
+    Q, policy_mc, training_history, q_snapshots = monte_carlo_control(
+        num_episodes=30000, epsilon=0.1
+    )
+
     q_state_action, v_state = q_values_to_array(Q)
-    
-    # -------- DISPLAY POLICY --------
+
     print("\n" + "=" * 60)
     print("LEARNED POLICY")
     print("=" * 60)
-    print_policy(policy_mc, "Monte Carlo - Learned Policy")
-    
-    # -------- RESULTS EXPORT --------
+    print_policy(policy_mc, "Monte Carlo v2 (window=1000) — Learned Policy")
+
     print("\n" + "=" * 60)
     print("RESULTS EXPORT")
     print("=" * 60)
-    
-    # Export action tensors to JSON
-    print("\n📋 Exporting action tensors to JSON format...")
-    save_action_tensor_json(policy_mc, "MonteCarlo_Learned")
-    
-    # Export Q-values
-    print("\n📋 Exporting Q-values to JSON format...")
-    save_q_values(q_state_action, "MonteCarlo_Q_values")
-    
-    # Export action tensors to Markdown
-    print("\n📊 Exporting action tensors to Markdown format...")
-    md_mc = action_tensor_to_markdown(policy_mc, "Monte Carlo - Learned Policy")
-    
-    md_path = os.path.join(VIS_DIR, 'task2_policies.md')
+
+    print("\n📋 Exporting action tensors...")
+    save_action_tensor_json(policy_mc, "MonteCarlo_v2_Learned")
+
+    print("\n📋 Exporting Q-values...")
+    save_q_values(q_state_action, "MonteCarlo_v2_Q_values")
+
+    print("\n📊 Exporting Markdown policy...")
+    md_mc = action_tensor_to_markdown(policy_mc, "Monte Carlo v2 — Learned Policy")
+    md_path = os.path.join(_V2_VIS_DIR, 'task2_v2_policies.md')
     with open(md_path, 'w') as f:
-        f.write("# Task 2: Monte Carlo Learning\n\n")
-        f.write("## Problem\n")
-        f.write("5x5 Grid World with stochastic transitions. Unknown environment model.\n")
-        f.write("Stochastic transitions: 0.8 intended, 0.1 each perpendicular direction.\n")
-        f.write("Epsilon-greedy exploration with epsilon=0.1.\n\n")
+        f.write("# Task 2-v2: Monte Carlo Learning (Sliding Window)\n\n")
+        f.write("## Configuration\n")
+        f.write(f"- Window size: {WINDOW} most recent returns per (s,a)\n")
+        f.write("- Epsilon-greedy exploration: ε = 0.1\n")
+        f.write("- Stochastic transitions: 0.8 intended, 0.1 each perpendicular.\n\n")
         f.write("## Learned Policy\n\n")
         f.write(md_mc + "\n")
         f.write("## Legend\n")
-        f.write("- `UP` = Move up\n")
-        f.write("- `DOWN` = Move down\n")
-        f.write("- `LEFT` = Move left\n")
-        f.write("- `RIGHT` = Move right\n")
+        f.write("- `UP` / `DOWN` / `LEFT` / `RIGHT` = action\n")
         f.write("- `OBS` = Obstacle\n")
         f.write("- `GOAL` = Goal state (4,4)\n")
         f.write(_similarity_md_section(policy_mc))
     print(f"✓ Saved policies to: {md_path}")
-    
-    # Create training history plot
-    print("\n📈 Generating training history plots...")
-    plot_training_history(training_history, "MonteCarlo_Training")
 
-    # Q-value history debug visualization
+    print("\n📈 Generating training history plots...")
+    plot_training_history(training_history, "MonteCarlo_v2_Training")
+
     print("\n📈 Generating Q-value history debug plot...")
     plot_q_value_history(q_snapshots)
-    
-    # Create summary JSON
-    print("\n📋 Creating summary report...")
+
     summary = {
-        "task": "Task 2: Monte Carlo Learning",
-        "algorithm": "First-Visit Monte Carlo Control",
+        "task": "Task 2-v2: Monte Carlo Learning (Sliding Window)",
+        "algorithm": "First-Visit MC Control, sliding-window returns",
+        "window_size": WINDOW,
         "num_episodes": len(training_history),
         "epsilon": 0.1,
         "discount_factor": float(GAMMA),
@@ -410,32 +340,14 @@ def main():
             "avg_reward_last_100": float(np.mean([h['reward'] for h in training_history[-100:]])) if len(training_history) >= 100 else 0
         }
     }
-    
-    summary_path = os.path.join(VIS_DIR, 'task2_summary.json')
+    summary_path = os.path.join(_V2_VIS_DIR, 'task2_v2_summary.json')
     with open(summary_path, 'w') as f:
         json.dump(summary, f, indent=2)
     print(f"✓ Saved summary to: {summary_path}")
-    
-    # Load Task 1 optimal policy for comparison
-    try:
-        task1_summary_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-            'task1', 'visualization', 'task1_summary.json'
-        )
-        if os.path.exists(task1_summary_path):
-            with open(task1_summary_path, 'r') as f:
-                task1_data = json.load(f)
-            print("\n" + "=" * 60)
-            print("COMPARISON WITH TASK 1")
-            print("=" * 60)
-            print(f"Task 1 - Value Iteration convergence: {task1_data['convergence']['value_iteration_iterations']} iterations")
-            print(f"Task 2 - Monte Carlo training: {len(training_history)} episodes")
-    except:
-        pass
-    
+
     print("\n" + "=" * 60)
-    print("TASK 2 COMPLETE")
-    print(f"All outputs saved to: {VIS_DIR}")
+    print("TASK 2-v2 COMPLETE")
+    print(f"All outputs saved to: {_V2_VIS_DIR}")
     print("=" * 60)
 
 

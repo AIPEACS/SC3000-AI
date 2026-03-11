@@ -289,6 +289,51 @@ def compare_policies(q_learning_policy, optimal_policy, mc_policy):
     print()
 
 
+def _similarity_md_section(policy):
+    """Build an MD section comparing policy vs VI optimal."""
+    vi_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           '..', 'task2-1', 'visualization',
+                           'ValueIteration_Optimal_action_tensor.json')
+    try:
+        with open(vi_path) as f:
+            data = json.load(f)
+        tensor = data["action_tensor"]
+        optimal = {(x, y): int(tensor[y][x]) for y in range(5) for x in range(5)}
+    except Exception as e:
+        return f"\n## Similarity with Optimal Policy\n\n_Could not load VI optimal: {e}_\n"
+    action_names = {0: 'UP', 1: 'DOWN', 2: 'LEFT', 3: 'RIGHT', -1: 'GOAL'}
+    mismatches, matches, total = [], 0, 0
+    for x in range(5):
+        for y in range(5):
+            if (x, y) in map0.road_blocking or (x, y) == map0.end_point:
+                continue
+            total += 1
+            if policy[(x, y)] == optimal[(x, y)]:
+                matches += 1
+            else:
+                mismatches.append(
+                    f"({x},{y}) learned {action_names.get(policy[(x,y)],'?')}, "
+                    f"optimal {action_names.get(optimal[(x,y)],'?')}"
+                )
+    pct = 100 * matches / total if total else 0
+    lines = [
+        "\n## Similarity with Optimal Policy",
+        "",
+        "- **Reference**: Value Iteration optimal policy (Task 2-1)",
+        f"- **Evaluated states**: {total} (excludes obstacles and goal)",
+        f"- **Matches**: {matches} / {total}",
+        f"- **Similarity**: **{pct:.1f}%**",
+    ]
+    if mismatches:
+        lines.append("- **Mismatched states**:")
+        for m in mismatches:
+            lines.append(f"  - {m}")
+    else:
+        lines.append("- All states match the optimal policy ✓")
+    lines.append("")
+    return "\n".join(lines) + "\n"
+
+
 def main():
     """Main execution for Task 3: Q-Learning"""
     
@@ -364,6 +409,7 @@ def main():
     
     with open("./visualization/task3_policies.md", 'w') as f:
         f.write(markdown_content)
+        f.write(_similarity_md_section(q_learning_policy))
     print(f"✓ Saved policies to: ./visualization/task3_policies.md")
     
     # Plot training history

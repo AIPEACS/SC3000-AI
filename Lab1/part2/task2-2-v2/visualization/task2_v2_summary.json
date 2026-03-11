@@ -1,0 +1,14 @@
+{
+  "task": "Task 2-v2: Monte Carlo Learning (Sliding Window)",
+  "algorithm": "First-Visit MC Control, sliding-window returns",
+  "window_size": 1000,
+  "num_episodes": 30000,
+  "epsilon": 0.1,
+  "discount_factor": 0.9,
+  "step_cost": -1,
+  "goal_reward": 10,
+  "training": {
+    "final_episode_reward": 0.0,
+    "avg_reward_last_100": -0.59
+  }
+}
