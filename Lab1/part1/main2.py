@@ -375,18 +375,12 @@ def astar_constrained_haversine_energyaware(G, Dist, Cost, Coord, start, goal, b
 
 			parent[(nb, ne)] = (node, e)
 			
-			# Admissible energy-aware heuristic with Pythagorean base: h(n) * (B / (B - (a*h(n) + b)))
 			h_nb = h.get(nb, float("inf"))
 			estimated_cost = a * h_nb + b
 			remaining_energy_budget = budget - ne
 			estimated_after_nb = remaining_energy_budget - estimated_cost
 			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else SET_MAX_PARA
-			
-			# Scale heuristic by budget ratio (higher when less budget remains)
-			if remaining_energy_budget > estimated_cost:
-				nf = nd + h_nb * h_para
-
-			
+			nf = nd + h_nb * h_para
 			heapq.heappush(pq, (nf, nd, ne, nb))
 
 	return float("inf"), -1, [], len(closed), linearity_info
@@ -458,11 +452,7 @@ def astar_constrained_pythagorean_energyaware(G, Dist, Cost, Coord, start, goal,
 			remaining_energy_budget = budget - ne
 			estimated_after_nb = remaining_energy_budget - estimated_cost
 			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else SET_MAX_PARA
-			
-			# Scale heuristic by budget ratio (higher when less budget remains)
-			if remaining_energy_budget > estimated_cost:
-				nf = nd + h_nb * h_para
-
+			nf = nd + h_nb * h_para
 			heapq.heappush(pq, (nf, nd, ne, nb))
 
 	return float("inf"), -1, [], len(closed), linearity_info
