@@ -8,7 +8,7 @@ from pathlib import Path
 START = "1"
 GOAL = "50"
 ENERGY_BUDGET = 287932
-MAX_PENALTY = 8  # cap for heuristic scaling parameter to prevent extreme values
+MAX_PENALTY = 9  # cap for heuristic scaling parameter to prevent extreme values
 
 # ── Data loading ───────────────────────────────────────────────────────────────
 def load_data(base_dir: Path):
