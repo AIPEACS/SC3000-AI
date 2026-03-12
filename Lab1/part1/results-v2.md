@@ -37,7 +37,7 @@ Formula: `sqrt(dlat^2 + dlon^2) * 111111 m/degree`
 - Shortest distance: 150335.55442 m
 - Total energy cost: 259087
 - Number of nodes in path: 122
-- Number of states visited: 17236
+- Number of states visited: 20728
 
 ## Task 3d: A* — Pythagorean + energy-aware `h(n) * B / (B - (a*h(n) + b))`
 
@@ -47,7 +47,7 @@ Formula: `sqrt(dlat^2 + dlon^2) * 111111 m/degree`
 - Shortest distance: 150335.55442 m
 - Total energy cost: 259087
 - Number of nodes in path: 122
-- Number of states visited: 5513
+- Number of states visited: 11530
 
 ## Comparison: states visited and path accuracy
 
@@ -56,5 +56,5 @@ Formula: `sqrt(dlat^2 + dlon^2) * 111111 m/degree`
 | Task 2 UCS constrained (optimal)      |          30267 | --               | 100.00% (baseline)         |
 | Task 3a A* Haversine                  |          29111 |     3.8%          | 100.00%                       |
 | Task 3b A* Pythagorean                |          29000 |     4.2%          | 100.00%                       |
-| Task 3c A* Haversine + energy-aware   |          17236 |    43.1%          | 100.00%                       |
-| Task 3d A* Pythagorean + energy-aware |           5513 |    81.8%          | 100.00%                       |
+| Task 3c A* Haversine + energy-aware   |          20728 |    31.5%          | 100.00%                       |
+| Task 3d A* Pythagorean + energy-aware |          11530 |    61.9%          | 100.00%                       |
