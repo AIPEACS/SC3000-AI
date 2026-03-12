@@ -135,6 +135,7 @@ def _haversine_heuristic(Coord, goal):
 	"""
 	Straight-line (Haversine) distance from every node to `goal`.
 	Coord values are stored as integers = degrees * 1e6 (lon, lat).
+	Returns distances in decimetres (×10 from metres) to match raw Dist units.
 	"""
 	R = 6371000.0  # Earth radius in metres
 	lon2, lat2 = (v / 1e6 for v in Coord[goal])
@@ -147,7 +148,7 @@ def _haversine_heuristic(Coord, goal):
 		dlat = lat2_r - lat1_r
 		dlon = lon2_r - lon1_r
 		a = math.sin(dlat / 2) ** 2 + math.cos(lat1_r) * math.cos(lat2_r) * math.sin(dlon / 2) ** 2
-		h[node] = 2 * R * math.asin(math.sqrt(a))
+		h[node] = 2 * R * math.asin(math.sqrt(a)) * 10  # metres → decimetres
 	return h
 
 
@@ -155,17 +156,18 @@ def _haversine_heuristic(Coord, goal):
 def _pythagorean_heuristic(Coord, goal):
 	"""
 	Euclidean (Pythagorean) distance in lat-lon space from every node to `goal`.
-	Times 1.11111 to approximate metres (at the equator, 1 degree ≈ 111111 m).
+	Coord values are stored as integers = degrees * 1e6 (lon, lat).
+	Returns decimetres (×10 from metres) to match raw Dist units.
 	"""
 	METRES_PER_DEGREE = 111111.0
 	lon2, lat2 = (v / 1e6 for v in Coord[goal])
 
 	h = {}
 	for node, vals in Coord.items():
-		lon1, lat1 = vals[0], vals[1]
+		lon1, lat1 = vals[0] / 1e6, vals[1] / 1e6
 		dlat = lat2 - lat1
 		dlon = lon2 - lon1
-		h[node] = math.sqrt(dlat**2 + dlon**2) * METRES_PER_DEGREE/1e6 * 10  # metres → decimetres
+		h[node] = math.sqrt(dlat**2 + dlon**2) * METRES_PER_DEGREE * 10  # metres → decimetres
 	return h
 
 
@@ -225,7 +227,7 @@ def astar_constrained_pythagorean(G, Dist, Cost, start, goal, budget, h):
 	"""
 	A* on expanded state (node, energy_used) with Pythagorean/Euclidean heuristic.
 
-	Priority  : f = g + h(node), where h is the Pythagorean distance, times 1.11111 for aproximation.
+	Priority  : f = g + h(node), where h is the Euclidean distance.
 	Constraint: cumulative energy must not exceed `budget`.
 	Pruning   : Pareto-dominance labelling.
 	"""
