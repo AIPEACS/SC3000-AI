@@ -313,7 +313,7 @@ def _edge_distances_pythagorean(Coord, Cost):
 		costs.append(int(cost))
 	return np.array(dists), np.array(costs)
 
-
+SET_MAX_PARA = 10.0  # cap for heuristic scaling parameter to prevent extreme values
 def astar_constrained_haversine_energyaware(G, Dist, Cost, Coord, start, goal, budget, h):
 	"""
 	A* with Haversine heuristic AND admissible energy-aware scaling.
@@ -380,7 +380,7 @@ def astar_constrained_haversine_energyaware(G, Dist, Cost, Coord, start, goal, b
 			estimated_cost = a * h_nb + b
 			remaining_energy_budget = budget - ne
 			estimated_after_nb = remaining_energy_budget - estimated_cost
-			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else 10.0
+			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else SET_MAX_PARA
 			
 			# Scale heuristic by budget ratio (higher when less budget remains)
 			if remaining_energy_budget > estimated_cost:
@@ -457,7 +457,7 @@ def astar_constrained_pythagorean_energyaware(G, Dist, Cost, Coord, start, goal,
 			estimated_cost = a * h_nb + b
 			remaining_energy_budget = budget - ne
 			estimated_after_nb = remaining_energy_budget - estimated_cost
-			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else 10.0
+			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else SET_MAX_PARA
 			
 			# Scale heuristic by budget ratio (higher when less budget remains)
 			if remaining_energy_budget > estimated_cost:
