@@ -135,9 +135,9 @@ def _haversine_heuristic(Coord, goal):
 	"""
 	Straight-line (Haversine) distance from every node to `goal`.
 	Coord values are stored as integers = degrees * 1e6 (lon, lat).
-	Returns distances in decimetres (×10 from metres) to match raw Dist units.
+	Returns distances in decimetres to match raw Dist units.
 	"""
-	R = 6371000.0  # Earth radius in metres
+	R = 63710000.0  # Earth radius
 	lon2, lat2 = (v / 1e6 for v in Coord[goal])
 	lat2_r, lon2_r = math.radians(lat2), math.radians(lon2)
 
@@ -148,26 +148,21 @@ def _haversine_heuristic(Coord, goal):
 		dlat = lat2_r - lat1_r
 		dlon = lon2_r - lon1_r
 		a = math.sin(dlat / 2) ** 2 + math.cos(lat1_r) * math.cos(lat2_r) * math.sin(dlon / 2) ** 2
-		h[node] = 2 * R * math.asin(math.sqrt(a)) * 10  # metres → decimetres
+		h[node] = 2 * R * math.asin(math.sqrt(a))
 	return h
 
 
 # ── Task 3b: A* with Pythagorean/Euclidean heuristic ──────────────────────────
 def _pythagorean_heuristic(Coord, goal):
-	"""
-	Euclidean (Pythagorean) distance in lat-lon space from every node to `goal`.
-	Coord values are stored as integers = degrees * 1e6 (lon, lat).
-	Returns decimetres (×10 from metres) to match raw Dist units.
-	"""
-	METRES_PER_DEGREE = 111111.0
+	
 	lon2, lat2 = (v / 1e6 for v in Coord[goal])
 
 	h = {}
 	for node, vals in Coord.items():
-		lon1, lat1 = vals[0] / 1e6, vals[1] / 1e6
-		dlat = lat2 - lat1
-		dlon = lon2 - lon1
-		h[node] = math.sqrt(dlat**2 + dlon**2) * METRES_PER_DEGREE * 10  # metres → decimetres
+		lon1, lat1 = vals[0], vals[1] 
+		dlat = lat2 - lat1 / 1e6
+		dlon = lon2 - lon1 / 1e6
+		h[node] = math.sqrt(dlat**2 + dlon**2) * 1000000
 	return h
 
 
