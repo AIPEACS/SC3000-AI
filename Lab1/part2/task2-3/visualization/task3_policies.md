@@ -4,18 +4,31 @@
 |-----|---|---|---|---|---|
 | 4 | RIGHT | RIGHT | RIGHT | RIGHT | GOAL |
 | 3 | UP | UP | OBS | UP | UP |
-| 2 | UP | UP | RIGHT | RIGHT | UP |
+| 2 | RIGHT | RIGHT | RIGHT | UP | UP |
 | 1 | UP | UP | OBS | UP | UP |
 | 0 | UP | RIGHT | RIGHT | UP | UP |
 
 ## Similarity with Optimal Policy
 
 - **Reference**: Value Iteration optimal policy (Task 2-1)
-- **Evaluated states**: 22 (excludes 2 obstacles and goal)
-- **Matches**: 18 / 22
-- **Similarity**: **81.8%**
+- **Evaluated states**: 22 (excludes obstacles and goal)
+- **Matches**: 21 / 22
+- **Similarity**: **95.5%**
 - **Mismatched states**:
   - (0,0) learned UP, optimal RIGHT
-  - (0,2) learned UP, optimal RIGHT
-  - (1,2) learned UP, optimal RIGHT
-  - (3,2) learned RIGHT, optimal UP
+
+
+## Convergence Speed Analysis
+
+**Convergence criteria** (both must hold for the rolling window):
+1. **Policy stability**: every valid state's greedy action is constant or
+   switches between at most 2 actions across the entire window.
+2. **Q-value stability**: for every (s,a), |Q(end) - Q(start)| <= 1 over the window.
+
+**Valid states tracked**: 22
+**Rolling window**: 1500 episodes
+
+**Convergence point**: Episode `4300`
+
+See `QLearning_Convergence_Analysis.png` for plot.
+

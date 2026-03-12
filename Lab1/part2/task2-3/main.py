@@ -116,6 +116,7 @@ def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON, alpha=ALPHA):
     training_history = {
         'episode_rewards': [],
         'episode_visited_pairs': [],
+        'episode_mean_td_errors': [],  # mean |TD error| per episode
         'q_snapshots': [],    # list of (episode, {(x,y): {action: value}})
     }
     
@@ -130,6 +131,7 @@ def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON, alpha=ALPHA):
         x, y = map0.start_point
         episode_reward = 0
         visited_pairs = set()
+        episode_td_errors = []
         
         # Run one episode until goal or timeout
         for step in range(1000):  # Max 1000 steps per episode
@@ -154,6 +156,7 @@ def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON, alpha=ALPHA):
             # TD update
             td_error = reward + GAMMA * max_q_next - old_q
             Q[((prev_x, prev_y), action)] = old_q + alpha * td_error
+            episode_td_errors.append(abs(td_error))
             
             # Check if reached goal
             if (x, y) == map0.end_point:
@@ -162,6 +165,9 @@ def q_learning(num_episodes=NUM_EPISODES, epsilon=EPSILON, alpha=ALPHA):
         # Record episode history
         training_history['episode_rewards'].append(episode_reward)
         training_history['episode_visited_pairs'].append(len(visited_pairs))
+        training_history['episode_mean_td_errors'].append(
+            float(np.mean(episode_td_errors)) if episode_td_errors else 0.0
+        )
 
         # Snapshot Q-values every 100 episodes
         if (episode_num + 1) % 100 == 0:
@@ -289,6 +295,149 @@ def compare_policies(q_learning_policy, optimal_policy, mc_policy):
     print()
 
 
+def convergence_analysis(training_history, window_episodes=1500):
+    """
+    Converged when BOTH criteria hold for a rolling 1500-episode window:
+      1. Policy stability: every valid state's greedy action (argmax Q) is constant
+         or switches between at most 2 actions across all snapshots in the window.
+      2. Q-value stability: for every (s,a), |Q at window-end - Q at window-start| <= 1.
+
+    Rolling window = (window_episodes // 100) snapshots (snapshots taken every 100 ep).
+    """
+    snapshots = training_history['q_snapshots']
+    snapshot_interval = 100
+    window_size = max(2, window_episodes // snapshot_interval)  # 1500 ep → 15 snapshots
+
+    valid_states = [
+        (x, y) for x in range(5) for y in range(5)
+        if (x, y) not in map0.road_blocking and (x, y) != map0.end_point
+    ]
+    total_states = len(valid_states)
+
+    empty = {
+        'conv_episodes': [], 'stable_counts': [],
+        'convergence_ep': None, 'total_sa_pairs': total_states,
+        'window_episodes': window_episodes,
+    }
+    if len(snapshots) < window_size:
+        return empty
+
+    # Precompute greedy action per state for every snapshot
+    greedy_per_snapshot = [(ep, {s: max(ACTIONS, key=lambda a, s=s: q[s][a]) for s in valid_states})
+                           for ep, q in snapshots]
+
+    conv_episodes = []
+    stable_counts = []
+    convergence_ep = None
+
+    for i in range(window_size - 1, len(snapshots)):
+        window_greedy = greedy_per_snapshot[i - window_size + 1: i + 1]
+        ep_start_q = snapshots[i - window_size + 1][1]  # Q-dict at window start
+        ep_end_q   = snapshots[i][1]                    # Q-dict at window end
+        ep = snapshots[i][0]
+
+        # Criterion 1: policy stability (≤2 greedy actions per state)
+        policy_stable = all(
+            len({g[s] for _, g in window_greedy}) <= 2
+            for s in valid_states
+        )
+
+        # Criterion 2: Q-value change <= 1 for ALL (s,a) from start to end of window
+        q_stable = all(
+            abs(ep_end_q[s][a] - ep_start_q[s][a]) <= 1.0
+            for s in valid_states for a in ACTIONS
+        )
+
+        # stable_count: number of states passing BOTH criteria (for the plot)
+        stable_count = sum(
+            1 for s in valid_states
+            if len({g[s] for _, g in window_greedy}) <= 2
+            and all(abs(ep_end_q[s][a] - ep_start_q[s][a]) <= 1.0 for a in ACTIONS)
+        )
+
+        conv_episodes.append(ep)
+        stable_counts.append(stable_count)
+
+        if policy_stable and q_stable and convergence_ep is None:
+            convergence_ep = ep
+
+    return {
+        'conv_episodes': conv_episodes,
+        'stable_counts': stable_counts,
+        'convergence_ep': convergence_ep,
+        'total_sa_pairs': total_states,
+        'window_episodes': window_episodes,
+    }
+
+
+def plot_convergence(conv_data, title="Q-Learning Convergence Analysis"):
+    """
+    Plot: # of stable (s,a) pairs over windows.
+    Mark when all pairs converge (reach 100% stable).
+    """
+    if len(conv_data['conv_episodes']) == 0:
+        fig, ax = plt.subplots(1, 1, figsize=(11, 5))
+        ax.text(0.5, 0.5, "No convergence data (insufficient snapshots)",
+                ha='center', va='center', fontsize=12)
+        return fig
+    
+    fig, ax = plt.subplots(1, 1, figsize=(11, 5))
+    
+    total = conv_data['total_sa_pairs']
+    pct_stable = [100 * c / total for c in conv_data['stable_counts']]
+
+    ax.plot(conv_data['conv_episodes'], pct_stable,
+            color='steelblue', linewidth=2.5, marker='o', markersize=4, label='% of states with stable policy')
+    ax.axhline(100, color='gray', linestyle=':', linewidth=1, alpha=0.5, label='100% stable (converged)')
+
+    if conv_data['convergence_ep']:
+        ax.axvline(conv_data['convergence_ep'], color='red', linestyle='-', linewidth=3,
+                   zorder=5, label=f"Converged at ep {conv_data['convergence_ep']}")
+        i = conv_data['conv_episodes'].index(conv_data['convergence_ep'])
+        ax.plot(conv_data['convergence_ep'], pct_stable[i], 'r*', markersize=20, zorder=6)
+    else:
+        ax.text(0.98, 0.05, 'No convergence detected', transform=ax.transAxes,
+                ha='right', va='bottom', fontsize=10, color='red',
+                bbox=dict(facecolor='lightyellow', edgecolor='red', boxstyle='round,pad=0.3'))
+
+    ax.set_xlabel('Episode (snapshot every 100 ep)', fontsize=11)
+    ax.set_ylabel('% of states with stable policy (\u22642 greedy actions in window)', fontsize=11)
+    ax.set_ylim([0, 105])
+    ax.set_title(f"{title}\nRolling window: {conv_data['window_episodes']} ep | Criteria: \u22642 greedy actions/state AND |\u0394Q| \u22641 per (s,a)",
+                 fontsize=12, fontweight='bold')
+    ax.legend(fontsize=10, loc='best')
+    ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    return fig
+
+
+def _convergence_md_section(conv_data):
+    """Build MD section: policy convergence based on greedy action stability."""
+    lines = [
+        "\n## Convergence Speed Analysis",
+        "",
+        "**Convergence criteria** (both must hold for the rolling window):",
+        "1. **Policy stability**: every valid state's greedy action is constant or",
+        "   switches between at most 2 actions across the entire window.",
+        "2. **Q-value stability**: for every (s,a), |Q(end) - Q(start)| <= 1 over the window.",
+        "",
+        f"**Valid states tracked**: {conv_data['total_sa_pairs']}",
+        f"**Rolling window**: {conv_data['window_episodes']} episodes",
+        "",
+    ]
+    if conv_data['convergence_ep']:
+        lines.append(f"**Convergence point**: Episode `{conv_data['convergence_ep']}`")
+    else:
+        lines.append("**Convergence point**: Not detected within the training run")
+    lines += [
+        "",
+        "See `QLearning_Convergence_Analysis.png` for plot.",
+        "",
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def _similarity_md_section(policy):
     """Build an MD section comparing policy vs VI optimal."""
     vi_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -407,9 +556,14 @@ def main():
     print("📊 Exporting action tensors to Markdown format...")
     markdown_content = action_tensor_to_markdown(q_learning_policy, "Q-Learning Learned Policy")
     
+    # Convergence analysis (must run before markdown export)
+    print("📈 Running convergence speed analysis...")
+    conv_data = convergence_analysis(training_history)
+    
     with open("./visualization/task3_policies.md", 'w') as f:
         f.write(markdown_content)
         f.write(_similarity_md_section(q_learning_policy))
+        f.write(_convergence_md_section(conv_data))
     print(f"✓ Saved policies to: ./visualization/task3_policies.md")
     
     # Plot training history
@@ -428,6 +582,13 @@ def main():
     fig_q.savefig(q_plot_path, dpi=150, bbox_inches='tight')
     plt.close(fig_q)
     print(f"✓ Q-value history plot saved to: {q_plot_path}")
+
+    # Plot convergence
+    fig_conv = plot_convergence(conv_data, "Q-Learning Convergence Analysis")
+    conv_plot_path = "./visualization/QLearning_Convergence_Analysis.png"
+    fig_conv.savefig(conv_plot_path, dpi=150, bbox_inches='tight')
+    plt.close(fig_conv)
+    print(f"✓ Convergence plot saved to: {conv_plot_path}")
     
     # Save summary
     print("📋 Creating summary report...")
@@ -442,7 +603,10 @@ def main():
         "max_episode_reward": float(np.max(training_history['episode_rewards'])),
         "min_episode_reward": float(np.min(training_history['episode_rewards'])),
         "test_avg_return": float(avg_return),
-        "test_success_rate": int(success_count)
+        "test_success_rate": int(success_count),
+        "convergence_episode": conv_data['convergence_ep'],
+        "convergence_window_episodes": conv_data['window_episodes'],
+        "convergence_total_states": conv_data.get('total_sa_pairs', 0),
     }
     
     with open("./visualization/task3_summary.json", 'w') as f:
