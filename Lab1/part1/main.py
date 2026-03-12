@@ -377,7 +377,7 @@ def main():
 		w("## Task 1: UCS (relaxed — no energy constraint)")
 		w()
 		if t1_path:
-			w(f"- Shortest distance: {t1_dist:.5f} m")
+			w(f"- Shortest distance: {t1_dist:.5f}")
 			w(f"- Number of nodes in path: {len(t1_path)}")
 			w(f"- Number of states visited: {t1_states}")
 		else:
@@ -387,7 +387,7 @@ def main():
 		w("## Task 2: UCS (energy-constrained shortest path)")
 		w()
 		if t2_path:
-			w(f"- Shortest distance: {t2_dist:.5f} m")
+			w(f"- Shortest distance: {t2_dist:.5f}")
 			w(f"- Total energy cost: {t2_energy}")
 			w(f"- Number of nodes in path: {len(t2_path)}")
 			w(f"- Number of states visited: {t2_states}")
@@ -398,7 +398,7 @@ def main():
 		w("## Task 3a: A* — Haversine heuristic (great-circle distance)")
 		w()
 		if t3a_path:
-			w(f"- Shortest distance: {t3a_dist:.5f} m")
+			w(f"- Shortest distance: {t3a_dist:.5f}")
 			w(f"- Total energy cost: {t3a_energy}")
 			w(f"- Number of nodes in path: {len(t3a_path)}")
 			w(f"- Number of states visited: {t3a_states}")
@@ -409,7 +409,7 @@ def main():
 		w("## Task 3b: A* — Pythagorean/Euclidean heuristic")
 		w()
 		if t3b_path:
-			w(f"- Shortest distance: {t3b_dist:.5f} m")
+			w(f"- Shortest distance: {t3b_dist:.5f}")
 			w(f"- Total energy cost: {t3b_energy}")
 			w(f"- Number of nodes in path: {len(t3b_path)}")
 			w(f"- Number of states visited: {t3b_states}")
