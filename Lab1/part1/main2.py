@@ -8,7 +8,7 @@ from pathlib import Path
 START = "1"
 GOAL = "50"
 ENERGY_BUDGET = 287932
-
+MAX_PENALTY = 8  # cap for heuristic scaling parameter to prevent extreme values
 
 # ── Data loading ───────────────────────────────────────────────────────────────
 def load_data(base_dir: Path):
@@ -313,7 +313,7 @@ def _edge_distances_pythagorean(Coord, Cost):
 		costs.append(int(cost))
 	return np.array(dists), np.array(costs)
 
-SET_MAX_PARA = 8  # cap for heuristic scaling parameter to prevent extreme values
+
 def astar_constrained_haversine_energyaware(G, Dist, Cost, Coord, start, goal, budget, h):
 	"""
 	A* with Haversine heuristic AND admissible energy-aware scaling.
@@ -379,9 +379,9 @@ def astar_constrained_haversine_energyaware(G, Dist, Cost, Coord, start, goal, b
 			estimated_cost = a * h_nb + b
 			remaining_energy_budget = budget - ne
 			estimated_after_nb = remaining_energy_budget - estimated_cost
-			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else SET_MAX_PARA
-			if h_para > SET_MAX_PARA:
-				h_para = SET_MAX_PARA
+			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else MAX_PENALTY
+			if h_para > MAX_PENALTY:
+				h_para = MAX_PENALTY
 				# Optionally log or track when capping occurs, as it indicates extreme cases.
 				# print(f"Warning: capping heuristic scaling parameter at {SET_MAX_PARA} for node {nb} with h(n)={h_nb:.2f}, estimated_cost={estimated_cost:.2f}, remaining_energy_budget={remaining_energy_budget}, estimated_after_nb={estimated_after_nb:.2f}")
 			nf = nd + h_nb * h_para
@@ -454,9 +454,9 @@ def astar_constrained_pythagorean_energyaware(G, Dist, Cost, Coord, start, goal,
 			estimated_cost = a * h_nb + b
 			remaining_energy_budget = budget - ne
 			estimated_after_nb = remaining_energy_budget - estimated_cost
-			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else SET_MAX_PARA
-			if h_para > SET_MAX_PARA:
-				h_para = SET_MAX_PARA
+			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else MAX_PENALTY
+			if h_para > MAX_PENALTY:
+				h_para = MAX_PENALTY
 			nf = nd + h_nb * h_para
 			heapq.heappush(pq, (nf, nd, ne, nb))
 
