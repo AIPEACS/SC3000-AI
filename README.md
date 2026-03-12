@@ -6,8 +6,8 @@ NTU 2026 Sem 2.
 
 ## Informortion
 - Contributor: 
-  - Hung: Lab 1 Task 1
-  - Allen: Lab 1 Task 2
+  - Hung: Lab 1 Task 1.1, 1.2, 1.3 Haversine heuristic
+  - Allen: Lab 1 Task 1.3 Euclidean Heurstic
 ---
 
 ## Lab 1 Task 2.2 — Monte Carlo Q-Learning
