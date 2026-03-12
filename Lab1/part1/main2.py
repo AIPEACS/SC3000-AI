@@ -578,108 +578,129 @@ def main():
 	else:
 		print("No feasible path found within the energy budget.")
 
-	# ── Write results-v2-heuristics.txt ────────────────────────────────────────
-	out_path = base_dir / "results-v2-heuristics.txt"
+	# ── Write paths to results-v2.txt ──────────────────────────────
+	txt_path = base_dir / "results-v2.txt"
+	with txt_path.open("w", encoding="utf-8") as txt:
+		def p(s=""):
+			txt.write(s + "\n")
+
+		p("Task 1: UCS (relaxed — no energy constraint)")
+		p(f"Shortest path: {'->'.join(t1_path) if t1_path else 'No path found'}.")
+		p()
+		p("Task 2: UCS (energy-constrained shortest path)")
+		p(f"Shortest path: {'->'.join(t2_path) if t2_path else 'No feasible path found within the energy budget'}.")
+		p()
+		p("Task 3a: A* — Haversine heuristic")
+		p(f"Shortest path: {'->'.join(t3a_path) if t3a_path else 'No feasible path found within the energy budget'}.")
+		p()
+		p("Task 3b: A* — Pythagorean/Euclidean heuristic")
+		p(f"Shortest path: {'->'.join(t3b_path) if t3b_path else 'No feasible path found within the energy budget'}.")
+		p()
+		p("Task 3c: A* — Haversine + energy-aware")
+		p(f"Shortest path: {'->'.join(t3c_path) if t3c_path else 'No feasible path found within the energy budget'}.")
+		p()
+		p("Task 3d: A* — Pythagorean + energy-aware")
+		p(f"Shortest path: {'->'.join(t3d_path) if t3d_path else 'No feasible path found within the energy budget'}.")
+
+	# ── Write results-v2.md (no paths) ─────────────────────────────
+	out_path = base_dir / "results-v2.md"
 	with out_path.open("w", encoding="utf-8") as out:
 		def w(s=""):
 			out.write(s + "\n")
 
-		w("=" * 60)
-		w("HEURISTIC COMPARISON: Haversine vs Pythagorean/Euclidean")
-		w("=" * 60)
-
+		w("# Heuristic Comparison: Haversine vs Pythagorean/Euclidean")
 		w()
-		w("Task 1: UCS (relaxed — no energy constraint)")
+
+		w("## Task 1: UCS (relaxed — no energy constraint)")
+		w()
 		if t1_path:
-			w(f"Shortest path: {'->'.join(t1_path)}.")
-			w(f"Shortest distance: {t1_dist}.")
-			w(f"Number of nodes in path: {len(t1_path)}.")
-			w(f"Number of states visited: {t1_states}.")
+			w(f"- Shortest distance: {t1_dist:.5f} m")
+			w(f"- Number of nodes in path: {len(t1_path)}")
+			w(f"- Number of states visited: {t1_states}")
 		else:
 			w("No path found.")
 
 		w()
-		w("=" * 60)
-		w("Task 2: UCS (energy-constrained shortest path)")
+		w("## Task 2: UCS (energy-constrained shortest path)")
+		w()
 		if t2_path:
-			w(f"Shortest path: {'->'.join(t2_path)}.")
-			w(f"Shortest distance: {t2_dist}.")
-			w(f"Total energy cost: {t2_energy}.")
-			w(f"Number of nodes in path: {len(t2_path)}.")
-			w(f"Number of states visited: {t2_states}.")
+			w(f"- Shortest distance: {t2_dist:.5f} m")
+			w(f"- Total energy cost: {t2_energy}")
+			w(f"- Number of nodes in path: {len(t2_path)}")
+			w(f"- Number of states visited: {t2_states}")
 		else:
 			w("No feasible path found within the energy budget.")
 
 		w()
-		w("=" * 60)
-		w("Task 3a: A* — Haversine heuristic (great-circle distance)")
+		w("## Task 3a: A* — Haversine heuristic (great-circle distance)")
+		w()
 		if t3a_path:
-			w(f"Shortest path: {'->'.join(t3a_path)}.")
-			w(f"Shortest distance: {t3a_dist}.")
-			w(f"Total energy cost: {t3a_energy}.")
-			w(f"Number of nodes in path: {len(t3a_path)}.")
-			w(f"Number of states visited: {t3a_states}.")
+			w(f"- Shortest distance: {t3a_dist:.5f} m")
+			w(f"- Total energy cost: {t3a_energy}")
+			w(f"- Number of nodes in path: {len(t3a_path)}")
+			w(f"- Number of states visited: {t3a_states}")
 		else:
 			w("No feasible path found within the energy budget.")
 
 		w()
-		w("=" * 60)
-		w("Task 3b: A* — Pythagorean/Euclidean heuristic")
-		w("  Formula: sqrt(dlat^2 + dlon^2) * 111,111 metres/degree")
+		w("## Task 3b: A* — Pythagorean/Euclidean heuristic")
+		w()
+		w("Formula: `sqrt(dlat^2 + dlon^2) * 111111 m/degree`")
+		w()
 		if t3b_path:
-			w(f"Shortest path: {'->'.join(t3b_path)}.")
-			w(f"Shortest distance: {t3b_dist}.")
-			w(f"Total energy cost: {t3b_energy}.")
-			w(f"Number of nodes in path: {len(t3b_path)}.")
-			w(f"Number of states visited: {t3b_states}.")
+			w(f"- Shortest distance: {t3b_dist:.5f} m")
+			w(f"- Total energy cost: {t3b_energy}")
+			w(f"- Number of nodes in path: {len(t3b_path)}")
+			w(f"- Number of states visited: {t3b_states}")
 		else:
 			w("No feasible path found within the energy budget.")
 
 		w()
-		w("=" * 60)
-		w("Task 3c: A* — Haversine + energy-aware h(n)*B/(B-(a*h(n)+b))")
-		w(f"  Linearity (Haversine): cost ≈ {a_hav:.6f} * haversine_dist + {b_hav:.2f}")
-		w(f"  Pearson correlation: {corr_hav:.6f}")
+		w("## Task 3c: A* — Haversine + energy-aware `h(n) * B / (B - (a*h(n) + b))`")
+		w()
+		w(f"- Linearity (Haversine): cost ≈ {a_hav:.6f} × haversine_dist + {b_hav:.2f}")
+		w(f"- Pearson correlation: {corr_hav:.6f}")
+		w()
 		if t3c_path:
-			w(f"Shortest path: {'->'.join(t3c_path)}.")
-			w(f"Shortest distance: {t3c_dist}.")
-			w(f"Total energy cost: {t3c_energy}.")
-			w(f"Number of nodes in path: {len(t3c_path)}.")
-			w(f"Number of states visited: {t3c_states}.")
+			w(f"- Shortest distance: {t3c_dist:.5f} m")
+			w(f"- Total energy cost: {t3c_energy}")
+			w(f"- Number of nodes in path: {len(t3c_path)}")
+			w(f"- Number of states visited: {t3c_states}")
 		else:
 			w("No feasible path found within the energy budget.")
 
 		w()
-		w("=" * 60)
-		w("Task 3d: A* — Pythagorean + energy-aware h(n)*B/(B-(a*h(n)+b))")
-		w(f"  Linearity (Pythagorean): cost ≈ {a_pyth:.6f} * pythagorean_dist + {b_pyth:.2f}")
-		w(f"  Pearson correlation: {corr_pyth:.6f}")
+		w("## Task 3d: A* — Pythagorean + energy-aware `h(n) * B / (B - (a*h(n) + b))`")
+		w()
+		w(f"- Linearity (Pythagorean): cost ≈ {a_pyth:.6f} × pythagorean_dist + {b_pyth:.2f}")
+		w(f"- Pearson correlation: {corr_pyth:.6f}")
+		w()
 		if t3d_path:
-			w(f"Shortest path: {'->'.join(t3d_path)}.")
-			w(f"Shortest distance: {t3d_dist}.")
-			w(f"Total energy cost: {t3d_energy}.")
-			w(f"Number of nodes in path: {len(t3d_path)}.")
-			w(f"Number of states visited: {t3d_states}.")
+			w(f"- Shortest distance: {t3d_dist:.5f} m")
+			w(f"- Total energy cost: {t3d_energy}")
+			w(f"- Number of nodes in path: {len(t3d_path)}")
+			w(f"- Number of states visited: {t3d_states}")
 		else:
 			w("No feasible path found within the energy budget.")
 
 		w()
-		w("=" * 60)
-		w("Comparison: states visited")
-		w(f"  Task 2 UCS (constrained):                      {t2_states}")
-		w(f"  Task 3a A* Haversine:                          {t3a_states}")
-		w(f"  Task 3b A* Pythagorean/Euclidean:              {t3b_states}")
-		w(f"  Task 3c A* Haversine + energy-aware:           {t3c_states}")
-		w(f"  Task 3d A* Pythagorean + energy-aware:         {t3d_states}")
+		w("## Comparison: states visited and path accuracy")
 		w()
-		hav_reduction = (t2_states - t3a_states) / t2_states * 100
-		pyth_reduction = (t2_states - t3b_states) / t2_states * 100
+		hav_reduction    = (t2_states - t3a_states) / t2_states * 100
+		pyth_reduction   = (t2_states - t3b_states) / t2_states * 100
 		hav_ea_reduction = (t2_states - t3c_states) / t2_states * 100
-		pyth_ea_reduction = (t2_states - t3d_states) / t2_states * 100
-		w(f"  Haversine reduction vs UCS:                   {hav_reduction:.1f}%")
-		w(f"  Pythagorean reduction vs UCS:                 {pyth_reduction:.1f}%")
-		w(f"  Haversine + energy-aware reduction:           {hav_ea_reduction:.1f}%")
-		w(f"  Pythagorean + energy-aware reduction:         {pyth_ea_reduction:.1f}%")
+		pyth_ea_reduction= (t2_states - t3d_states) / t2_states * 100
+		t3a_accuracy = t2_dist / t3a_dist * 100 if t3a_dist else 0.0
+		t3b_accuracy = t2_dist / t3b_dist * 100 if t3b_dist else 0.0
+		t3c_accuracy = t2_dist / t3c_dist * 100 if t3c_dist else 0.0
+		t3d_accuracy = t2_dist / t3d_dist * 100 if t3d_dist else 0.0
+		w(f"| Algorithm                             | States visited | States VisitedReduction vs UCS | Path optimality |")
+		w(f"|---------------------------------------|----------------|------------------|----------------------------|")
+		w(f"| Task 2 UCS constrained (optimal)      | {t2_states:>14} | --               | 100.00% (baseline)         |")
+		w(f"| Task 3a A* Haversine                  | {t3a_states:>14} | {hav_reduction:>7.1f}%          | {t3a_accuracy:.2f}%                       |")
+		w(f"| Task 3b A* Pythagorean                | {t3b_states:>14} | {pyth_reduction:>7.1f}%          | {t3b_accuracy:.2f}%                       |")
+		w(f"| Task 3c A* Haversine + energy-aware   | {t3c_states:>14} | {hav_ea_reduction:>7.1f}%          | {t3c_accuracy:.2f}%                       |")
+		w(f"| Task 3d A* Pythagorean + energy-aware | {t3d_states:>14} | {pyth_ea_reduction:>7.1f}%          | {t3d_accuracy:.2f}%                       |")
 
 
 if __name__ == "__main__":
