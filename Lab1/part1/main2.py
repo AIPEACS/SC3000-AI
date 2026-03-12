@@ -313,7 +313,7 @@ def _edge_distances_pythagorean(Coord, Cost):
 		costs.append(int(cost))
 	return np.array(dists), np.array(costs)
 
-SET_MAX_PARA = 10.0  # cap for heuristic scaling parameter to prevent extreme values
+SET_MAX_PARA = 8  # cap for heuristic scaling parameter to prevent extreme values
 def astar_constrained_haversine_energyaware(G, Dist, Cost, Coord, start, goal, budget, h):
 	"""
 	A* with Haversine heuristic AND admissible energy-aware scaling.
@@ -380,11 +380,14 @@ def astar_constrained_haversine_energyaware(G, Dist, Cost, Coord, start, goal, b
 			remaining_energy_budget = budget - ne
 			estimated_after_nb = remaining_energy_budget - estimated_cost
 			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else SET_MAX_PARA
+			if h_para > SET_MAX_PARA:
+				h_para = SET_MAX_PARA
+				# Optionally log or track when capping occurs, as it indicates extreme cases.
+				# print(f"Warning: capping heuristic scaling parameter at {SET_MAX_PARA} for node {nb} with h(n)={h_nb:.2f}, estimated_cost={estimated_cost:.2f}, remaining_energy_budget={remaining_energy_budget}, estimated_after_nb={estimated_after_nb:.2f}")
 			nf = nd + h_nb * h_para
 			heapq.heappush(pq, (nf, nd, ne, nb))
 
 	return float("inf"), -1, [], len(closed), linearity_info
-
 
 def astar_constrained_pythagorean_energyaware(G, Dist, Cost, Coord, start, goal, budget, h):
 	"""
@@ -452,6 +455,8 @@ def astar_constrained_pythagorean_energyaware(G, Dist, Cost, Coord, start, goal,
 			remaining_energy_budget = budget - ne
 			estimated_after_nb = remaining_energy_budget - estimated_cost
 			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else SET_MAX_PARA
+			if h_para > SET_MAX_PARA:
+				h_para = SET_MAX_PARA
 			nf = nd + h_nb * h_para
 			heapq.heappush(pq, (nf, nd, ne, nb))
 
