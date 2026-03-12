@@ -24,11 +24,8 @@ def load_data(base_dir: Path):
 
 # ── Task 1: UCS (no energy constraint) ────────────────────────────────────
 def ucs(G, Dist, start, goal=None):
-	"""
-	Standard UCS — minimise total distance, no energy constraint.
-	If goal is None, runs to completion and returns the full distance map
-	(used to precompute the A* heuristic by calling UCS(G, Dist, GOAL)).
-	"""
+	# Standard UCS — minimise total distance, no energy constraint.
+
 	pq = [(0.0, start)]
 	best = {start: 0.0}
 	parent = {start: None}
@@ -79,12 +76,13 @@ def ucs_constrained(G, Dist, Cost, start, goal, budget):
 	# pq entries: (dist_so_far, energy_so_far, node)
 	pq = [(0.0, 0, start)]
 
-	# best[node] = list of Pareto-optimal (dist, energy) labels
+	# best[node] = list of Pareto-optimal (best energy + best dist) (dist, energy) to each nodes
 	best = {start: [(0.0, 0)]}
 
 	# parent[(node, energy)] = (parent_node, parent_energy) | None for start
 	parent = {(start, 0): None}
 
+	# meaning the optimal path to that exact (node, energy) state has been confirmed.
 	# First pop for (node, energy) is always optimal under UCS.
 	closed = set()
 
@@ -249,28 +247,7 @@ def main():
 	else:
 		print("No feasible path found within the energy budget.")
 
-	# ── Task 3a ────────────────────────────────────────────────────────────────
-	# Heuristic: exact min-distance to GOAL on relaxed graph.
-	# Reuses ucs() with goal=None to get the full distance map.
-	h_ucs = ucs(G, Dist, GOAL)
-
-	t3a_dist, t3a_energy, t3a_path, t3a_states = astar_constrained(
-		G, Dist, Cost, START, GOAL, ENERGY_BUDGET, h_ucs
-	)
-
-	print()
-	print("=" * 60)
-	print("Task 3a: A* — heuristic: backward-UCS (exact relaxed)")
-	if t3a_path:
-		print(f"Shortest path: {'->'.join(t3a_path)}.")
-		print(f"Shortest distance: {t3a_dist}.")
-		print(f"Total energy cost: {t3a_energy}.")
-		print(f"Number of nodes in path: {len(t3a_path)}.")
-		print(f"Number of states visited: {t3a_states}.")
-	else:
-		print("No feasible path found within the energy budget.")
-
-	# ── Task 3b ────────────────────────────────────────────────────────────────
+	# ── Task 3 ────────────────────────────────────────────────────────────────
 	# Heuristic: straight-line (Haversine) distance from each node to GOAL.
 	h_sld = _haversine_heuristic(Coord, GOAL)
 
@@ -280,7 +257,7 @@ def main():
 
 	print()
 	print("=" * 60)
-	print("Task 3b: A* — heuristic: straight-line distance (Haversine)")
+	print("Task 3: A* — heuristic: straight-line distance (Haversine)")
 	if t3b_path:
 		print(f"Shortest path: {'->'.join(t3b_path)}.")
 		print(f"Shortest distance: {t3b_dist}.")
