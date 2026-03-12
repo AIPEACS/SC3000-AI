@@ -51,7 +51,7 @@ Formula: `sqrt(dlat^2 + dlon^2) * 111111 m/degree`
 
 ## Comparison: states visited and path accuracy
 
-| Algorithm                             | States visited | States VisitedReduction vs UCS | Path optimality |
+| Algorithm                             | States visited | States Visited Reduction | Path optimality |
 |---------------------------------------|----------------|------------------|----------------------------|
 | Task 2 UCS constrained (optimal)      |          30267 | --               | 100.00% (baseline)         |
 | Task 3a A* Haversine                  |          29111 |     3.8%          | 100.00%                       |

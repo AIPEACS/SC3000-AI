@@ -377,15 +377,15 @@ def astar_constrained_haversine_energyaware(G, Dist, Cost, Coord, start, goal, b
 			
 			# Admissible energy-aware heuristic with Pythagorean base: h(n) * (B / (B - (a*h(n) + b)))
 			h_nb = h.get(nb, float("inf"))
-			estimated_remaining_cost = a * h_nb + b
+			estimated_cost = a * h_nb + b
 			remaining_energy_budget = budget - ne
+			estimated_after_nb = remaining_energy_budget - estimated_cost
+			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else 10.0
 			
 			# Scale heuristic by budget ratio (higher when less budget remains)
-			if remaining_energy_budget > estimated_remaining_cost:
-				nf = nd + h_nb * (remaining_energy_budget / (remaining_energy_budget - estimated_remaining_cost))
-			else:
-				# Very conservative: if estimated remaining cost ≈ remaining budget, use large value
-				nf = nd + h_nb * 10.0  # Penalize heavily
+			if remaining_energy_budget > estimated_cost:
+				nf = nd + h_nb * h_para
+
 			
 			heapq.heappush(pq, (nf, nd, ne, nb))
 
@@ -454,13 +454,14 @@ def astar_constrained_pythagorean_energyaware(G, Dist, Cost, Coord, start, goal,
 			parent[(nb, ne)] = (node, e)
 
 			h_nb = h.get(nb, float("inf"))
-			estimated_remaining_cost = a * h_nb + b
+			estimated_cost = a * h_nb + b
 			remaining_energy_budget = budget - ne
-
-			if remaining_energy_budget > estimated_remaining_cost:
-				nf = nd + h_nb * (remaining_energy_budget / (remaining_energy_budget - estimated_remaining_cost))
-			else:
-				nf = nd + h_nb * 10.0
+			estimated_after_nb = remaining_energy_budget - estimated_cost
+			h_para = remaining_energy_budget / estimated_after_nb if estimated_after_nb > 0 else 10.0
+			
+			# Scale heuristic by budget ratio (higher when less budget remains)
+			if remaining_energy_budget > estimated_cost:
+				nf = nd + h_nb * h_para
 
 			heapq.heappush(pq, (nf, nd, ne, nb))
 
@@ -694,7 +695,7 @@ def main():
 		t3b_accuracy = t2_dist / t3b_dist * 100 if t3b_dist else 0.0
 		t3c_accuracy = t2_dist / t3c_dist * 100 if t3c_dist else 0.0
 		t3d_accuracy = t2_dist / t3d_dist * 100 if t3d_dist else 0.0
-		w(f"| Algorithm                             | States visited | States VisitedReduction vs UCS | Path optimality |")
+		w(f"| Algorithm                             | States visited | States Visited Reduction | Path optimality |")
 		w(f"|---------------------------------------|----------------|------------------|----------------------------|")
 		w(f"| Task 2 UCS constrained (optimal)      | {t2_states:>14} | --               | 100.00% (baseline)         |")
 		w(f"| Task 3a A* Haversine                  | {t3a_states:>14} | {hav_reduction:>7.1f}%          | {t3a_accuracy:.2f}%                       |")
