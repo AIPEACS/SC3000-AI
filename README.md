@@ -9,7 +9,10 @@ NTU 2026 Sem 2.
   - Hung: Lab 1 Task 1.1, 1.2, 1.3 Haversine heuristic
   - Allen: Lab 1 Task 1.3 Pythagorean Heurstic & Task 2
 ---
-
+## Lab artitechtures and designs information:
+- Lab 1: [Lab 1](./Lab1/lab1.md)
+- Lab 2: TBD
+---
 ## Lab 1 Task 2.2 — Monte Carlo Q-Learning
 - Author: Allen
 
