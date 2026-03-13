@@ -292,13 +292,13 @@ def main():
     print("RESULTS EXPORT")
     print("=" * 60)
 
-    print("\n📋 Exporting action tensors...")
+    print("\n Exporting action tensors...")
     save_action_tensor_json(policy_mc, "MonteCarlo_v2_Learned")
 
-    print("\n📋 Exporting Q-values...")
+    print("\n Exporting Q-values...")
     save_q_values(q_state_action, "MonteCarlo_v2_Q_values")
 
-    print("\n📊 Exporting Markdown policy...")
+    print("\n Exporting Markdown policy...")
     md_mc = action_tensor_to_markdown(policy_mc, "Monte Carlo v2 — Learned Policy")
     md_path = os.path.join(_V2_VIS_DIR, 'task2_v2_policies.md')
     with open(md_path, 'w') as f:

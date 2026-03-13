@@ -543,20 +543,21 @@ def main():
     os.makedirs("./visualization/", exist_ok=True)
     
     # Export action tensor to JSON
-    print("📋 Exporting action tensors to JSON format...")
+    print(" Exporting action tensors to JSON format...")
     json_path = save_action_tensor_json(Q_values, q_learning_policy, "QLearning")
     print(f"✓ Saved action tensor to: {json_path}")
     
     # Export Q-values to JSON
+    print("\n Exporting Q-values to JSON format...")
     q_path = save_q_values(Q_values, "QLearning")
     print(f"✓ Saved Q-values to: {q_path}")
     
     # Export to markdown
-    print("📊 Exporting action tensors to Markdown format...")
+    print("\n Exporting action tensors to Markdown format...")
     markdown_content = action_tensor_to_markdown(q_learning_policy, "Q-Learning Learned Policy")
     
     # Convergence analysis (must run before markdown export)
-    print("📈 Running convergence speed analysis...")
+    print("\n Running convergence speed analysis...")
     conv_data = convergence_analysis(training_history)
     
     with open("./visualization/task3_policies.md", 'w') as f:
@@ -573,7 +574,7 @@ def main():
     print(f"✓ Convergence plot saved to: {conv_plot_path}")
     
     # Save summary
-    print("📋 Creating summary report...")
+    print(" Creating summary report...")
     summary = {
         "algorithm": "Q-Learning",
         "num_episodes": NUM_EPISODES,

@@ -356,15 +356,15 @@ def main():
     print("=" * 60)
     
     # Export action tensors to JSON
-    print("\n📋 Exporting action tensors to JSON format...")
+    print("\n Exporting action tensors to JSON format...")
     save_action_tensor_json(policy_mc, "MonteCarlo_Learned")
     
     # Export Q-values
-    print("\n📋 Exporting Q-values to JSON format...")
+    print("\n Exporting Q-values to JSON format...")
     save_q_values(q_state_action, "MonteCarlo_Q_values")
     
     # Export action tensors to Markdown
-    print("\n📊 Exporting action tensors to Markdown format...")
+    print("\n Exporting action tensors to Markdown format...")
     md_mc = action_tensor_to_markdown(policy_mc, "Monte Carlo - Learned Policy")
     
     md_path = os.path.join(VIS_DIR, 'task2_policies.md')
@@ -387,7 +387,7 @@ def main():
     print(f"✓ Saved policies to: {md_path}")
     
     # Create summary JSON
-    print("\n📋 Creating summary report...")
+    print("\n Creating summary report...")
     summary = {
         "task": "Task 2: Monte Carlo Learning",
         "algorithm": "First-Visit Monte Carlo Control",

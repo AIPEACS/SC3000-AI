@@ -499,18 +499,16 @@ def main():
     print("RESULTS EXPORT")
     print("=" * 60)
     
-    # Export action tensors to JSON
-    print("\n📋 Exporting action tensors to JSON format...")
-    save_action_tensor_json(policy_vi, "ValueIteration_Optimal")
-    print()
-    save_action_tensor_json(policy_pi, "PolicyIteration_Optimal")
+    # Export action tensor to JSON (VI and PI converge to the same optimal policy)
+    print("\n Exporting action tensor to JSON format...")
+    save_action_tensor_json(policy_vi, "task1_Optimal")
 
     # Export Q-value map to JSON (VI and PI converge to the same Q*)
-    print("\n📋 Exporting Q-value map to JSON format...")
+    print("\n Exporting Q-value map to JSON format...")
     save_q_values(compute_q_values(V_vi), "task1_Q_values")
     
     # Export action tensors to Markdown
-    print("\n📊 Exporting action tensors to Markdown format...")
+    print("\n Exporting action tensors to Markdown format...")
     md_vi = action_tensor_to_markdown(policy_vi, "Value Iteration - Optimal Policy")
     md_pi = action_tensor_to_markdown(policy_pi, "Policy Iteration - Optimal Policy")
     
@@ -532,7 +530,7 @@ def main():
     print(f"✓ Saved policies to: {md_path}")
     
     # Create summary JSON
-    print("\n📋 Creating summary report...")
+    print("\n Creating summary report...")
     summary = {
         "task": "Task 1: Planning with Known Environment Model",
         "discount_factor": float(GAMMA),
