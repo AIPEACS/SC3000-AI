@@ -5,12 +5,12 @@
   "exploration_rate_epsilon": 0.1,
   "discount_factor_gamma": 0.9,
   "final_avg_reward": -0.64,
-  "total_training_reward": -48202.0,
+  "total_training_reward": -48941.0,
   "max_episode_reward": 2.0,
-  "min_episode_reward": -197.0,
-  "test_avg_return": -0.2,
+  "min_episode_reward": -118.0,
+  "test_avg_return": -0.4,
   "test_success_rate": 10,
-  "convergence_episode": 4300,
+  "convergence_episode": 5700,
   "convergence_window_episodes": 1500,
   "convergence_total_states": 22
 }

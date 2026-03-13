@@ -28,7 +28,7 @@
 **Valid states tracked**: 22
 **Rolling window**: 1500 episodes
 
-**Convergence point**: Episode `4300`
+**Convergence point**: Episode `5700`
 
 See `QLearning_Convergence_Analysis.png` for plot.
 
