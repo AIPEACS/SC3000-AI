@@ -305,7 +305,7 @@ def main():
         f.write("# Task 2-v2: Monte Carlo Learning (Sliding Window)\n\n")
         f.write("## Configuration\n")
         f.write(f"- Window size: {WINDOW} most recent returns per (s,a)\n")
-        f.write("- Epsilon-greedy exploration: ε = 0.1\n")
+        f.write("- Epsilon-greedy exploration: e = 0.1\n")
         f.write("- Stochastic transitions: 0.8 intended, 0.1 each perpendicular.\n\n")
         f.write("## Learned Policy\n\n")
         f.write(md_mc + "\n")
