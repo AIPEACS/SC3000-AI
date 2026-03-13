@@ -1,5 +1,5 @@
 {
-  "title": "PolicyIteration_Q_values",
+  "title": "task1_Q_values",
   "description": "Q-values for state-action pairs",
   "shape": [
     5,
