@@ -1,5 +1,5 @@
 {
-  "title": "PolicyIteration_Optimal - Action Tensor",
+  "title": "task1_Optimal - Action Tensor",
   "description": "5x5 matrix of optimal action indices for each state",
   "action_indices": {
     "0": "UP",
