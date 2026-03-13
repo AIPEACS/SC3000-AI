@@ -2,39 +2,149 @@
 
 # part 1
 
-## A* Heuristic — Haversine Formula
+## Graph Search Algorithms on Road Networks
 
-A* requires an **admissible heuristic** h(n): an estimate of the remaining distance from node n to the goal that **never overestimates** the true cost.
+Part 1 explores uninformed and informed graph search algorithms on a **real-world road network** with the goal of finding optimal paths given multiple constraints.
 
-Since the graph represents real-world locations with GPS coordinates, the heuristic used is the **Haversine formula** — the great-circle (straight-line) distance between two points on the Earth's surface.
+### Problem Setup
+- **Graph**: Real-world locations (nodes) connected by roads (weighted edges)
+- **Edge weights**: 
+  - `Dist.json` — distance (in decimetres) for each edge
+  - `Cost.json` — energy cost for each edge
+- **Search parameters**:
+  - Start node: "1"
+  - Goal node: "50"
+  - Energy budget: 287,932 units
+- **Coordinates**: `Coord.json` stores GPS coordinates (lon, lat) as integers = degrees × 10⁶
 
-### Why Haversine?
-- Road distances are always ≥ straight-line distances, so Haversine never overestimates → **admissible**.
-- It accounts for the Earth's curvature, making it more accurate than simple Euclidean distance for geographic coordinates.
+### Task 1: UCS (Relaxed — No Energy Constraint)
 
-### Formula
+**Objective**: Find the shortest path from start to goal **ignoring energy cost**.
 
-Given two points with latitude/longitude $(φ_1, λ_1)$ and $(φ_2, λ_2)$ in radians:
+#### Algorithm: Uniform Cost Search (UCS)
+- **Priority queue**: Ordered by accumulated distance (cost)
+- **Expansion**: Always expands the node with minimum cumulative cost first
+- **Optimality**: Guaranteed to find shortest path under non-negative costs
+- **State**: Single node (no energy tracking needed)
+
+**Results**:
+- Shortest distance: **148,648.6 decimetres** (~1486.5 km)
+- Path length: **122 nodes**
+- States visited: **5,304**
+
+---
+
+### Task 2: UCS with Energy Constraint
+
+**Objective**: Find the shortest path while staying within the energy budget of 287,932 units.
+
+#### Algorithm: Constrained UCS with Pareto Dominance Pruning
+- **Expanded state**: `(node, energy_accumulated)`
+- **Priority queue**: Ordered by accumulated distance
+- **Constraint**: Prune edges that would exceed the energy budget
+- **Optimality technique — Pareto dominance**:
+  - At each node, maintain a **Pareto front** of non-dominated (distance, energy) labels
+  - A new label `(d', e')` is discarded if any existing label `(d, e)` satisfies: $d ≤ d'$ AND $e ≤ e'$
+  - Labels dominated by the new one are removed
+  - This prunes suboptimal paths early, reducing the search space
+
+**Results**:
+- Shortest distance: **150,335.6 decimetres** (~1503.4 km) — slightly longer due to energy constraint
+- Total energy used: **259,087 units** (within budget of 287,932)
+- Path length: **122 nodes**
+- States visited: **30,267** — 5.7× more than Task 1 due to expanded state space
+
+---
+
+### Task 3a: A* with Haversine Heuristic
+
+**Objective**: Find the shortest energy-constrained path using **informed search** with Haversine (great-circle) heuristic.
+
+#### Haversine Heuristic: Why Admissible?
+
+A* requires an **admissible heuristic** $h(n)$ that never overestimates the true remaining cost.
+
+Since the graph represents real-world locations with GPS coordinates, the **Haversine formula** computes the great-circle (straight-line) distance between two points on Earth's surface:
 
 $$a = \sin^2\!\left(\frac{φ_2 - φ_1}{2}\right) + \cos φ_1 \cdot \cos φ_2 \cdot \sin^2\!\left(\frac{λ_2 - λ_1}{2}\right)$$
 
-$$d = 2R \cdot \arcsin(\sqrt{a})$$
+$$h(n) = 2R \cdot \arcsin(\sqrt{a})$$
 
-where $R = 6{,}371{,}000$ m (Earth's mean radius).
+where $R = 6,371,000$ m (Earth's mean radius).
 
-### Implementation detail
-Coordinates in `Coord.json` are stored as integers = degrees × 10⁶, so they are divided by `1e6` before conversion to radians:
+**Admissibility**: Road distances are **always ≥ straight-line distances**, so Haversine never overestimates → admissible.
 
+#### Implementation
 ```python
-R = 6371000.0
-lon1, lat1 = vals[0] / 1e6, vals[1] / 1e6
-dlat = lat2_r - lat1_r
-dlon = lon2_r - lon1_r
-a = math.sin(dlat/2)**2 + math.cos(lat1_r) * math.cos(lat2_r) * math.sin(dlon/2)**2
-h[node] = 2 * R * math.asin(math.sqrt(a))
+R = 63710000.0  # decimetres
+lon2, lat2 = (v / 1e6 for v in Coord[goal])
+lat2_r, lon2_r = math.radians(lat2), math.radians(lon2)
+
+h = {}
+for node, vals in Coord.items():
+    lon1, lat1 = vals[0] / 1e6, vals[1] / 1e6
+    lat1_r, lon1_r = math.radians(lat1), math.radians(lon1)
+    dlat = lat2_r - lat1_r
+    dlon = lon2_r - lon1_r
+    a = math.sin(dlat/2)**2 + math.cos(lat1_r) * math.cos(lat2_r) * math.sin(dlon/2)**2
+    h[node] = 2 * R * math.asin(math.sqrt(a))
 ```
 
-The heuristic is precomputed once for all nodes → goal before the search begins, giving O(1) lookup during A*.
+The heuristic is **precomputed once** for all nodes → goal, giving $O(1)$ lookup during A*.
+
+#### Algorithm: A* with Pareto Dominance on Expanded State
+- **Priority queue**: Ordered by $f(n) = g(n) + h(n)$ where $g(n)$ = accumulated distance
+- **Expanded state**: `(node, energy_accumulated)`
+- **Pruning**: Same Pareto dominance as Task 2
+- **Optimality**: Guaranteed (Haversine is admissible and A* expands in best-first order)
+
+**Results**:
+- Shortest distance: **150,335.6 decimetres** (same as Task 2 — optimal)
+- Total energy used: **259,087 units**
+- Path length: **122 nodes**
+- States visited: **9,552** — **68.4% reduction** vs UCS constrained
+
+---
+
+### Task 3b: A* with Pythagorean/Euclidean Heuristic
+
+**Objective**: Find the shortest energy-constrained path using **Euclidean distance heuristic** (comparison).
+
+#### Euclidean Heuristic
+Simple straight-line distance in (lon, lat) space:
+
+$$h(n) = \sqrt{(lon_2 - lon_1)^2 + (lat_2 - lat_1)^2} \times 10^6$$
+
+where coordinates are scaled by $10^6$ to match distance units.
+
+**Note**: This heuristic is **not truly admissible** in geographic coordinates (Euclidean distance is not the true minimum), but it serves as a benchmark.
+
+#### Algorithm
+Same A* with expanded state and Pareto dominance as Task 3a, but uses Euclidean distance instead of Haversine.
+
+**Results**:
+- Shortest distance: **150,335.6 decimetres** (same optimal path)
+- Total energy used: **259,087 units**
+- Path length: **122 nodes**
+- States visited: **3,271** — **89.2% reduction** vs UCS constrained
+
+---
+
+### Comparison: Efficiency of Search Algorithms
+
+| Algorithm | States Visited | Reduction vs UCS | Path Optimality | Heuristic Quality |
+|-----------|---|---|---|---|
+| **Task 1: UCS (relaxed)** | 5,304 | -- | 100% (baseline) | None |
+| **Task 2: UCS (constrained)** | 30,267 | -- | 100% (optimal under budget) | None |
+| **Task 3a: A* Haversine** | 9,552 | **68.4%** ↓ | 100% (optimal) | Haversine (admissible) |
+| **Task 3b: A* Euclidean** | 3,271 | **89.2%** ↓ | 100% (optimal) | Euclidean (tighter estimate) |
+
+### Key Insights
+
+1. **Informed search beats uninformed**: A* with Haversine reduces states expanded by 68% by guiding the search toward the goal.
+2. **Heuristic quality matters**: Even though Euclidean is not strictly admissible, it's a tighter estimate of road distance than Haversine and achieves 89% reduction.
+3. **Pareto dominance pruning**: Critical for multi-objective optimization (minimizing both distance and energy usage).
+4. **Energy constraint adds complexity**: Expanding state space from 50 nodes to 30K+ (node, energy) tuples, but informed search still maintains 3-5K expansions.
 
 # part 2
 
