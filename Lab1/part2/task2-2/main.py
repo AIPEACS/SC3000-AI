@@ -27,8 +27,7 @@ from agent_task2 import (
 import scene_map as map0
 from visualization_task2 import (
     VIS_DIR, print_policy, action_tensor_to_markdown,
-    save_policy_json, save_action_tensor_json, save_q_values, plot_training_history,
-    plot_q_value_history
+    save_policy_json, save_action_tensor_json, save_q_values
 )
 
 
@@ -386,14 +385,6 @@ def main():
         f.write("- `GOAL` = Goal state (4,4)\n")
         f.write(_similarity_md_section(policy_mc))
     print(f"✓ Saved policies to: {md_path}")
-    
-    # Create training history plot
-    print("\n📈 Generating training history plots...")
-    plot_training_history(training_history, "MonteCarlo_Training")
-
-    # Q-value history debug visualization
-    print("\n📈 Generating Q-value history debug plot...")
-    plot_q_value_history(q_snapshots)
     
     # Create summary JSON
     print("\n📋 Creating summary report...")

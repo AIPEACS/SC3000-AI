@@ -42,16 +42,12 @@ import visualization_task2 as vis_mod  # type: ignore[import]
 
 # ── redirect all outputs to this folder ───────────────────────────────────────
 _V2_VIS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'visualization')
-_V2_DEBUG_VIS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'debug_visualization')
 os.makedirs(_V2_VIS_DIR, exist_ok=True)
-os.makedirs(_V2_DEBUG_VIS_DIR, exist_ok=True)
-vis_mod.VIS_DIR = _V2_VIS_DIR               # patch: plot_training_history / save_* functions
-vis_mod.DEBUG_VIS_DIR = _V2_DEBUG_VIS_DIR   # patch: plot_q_value_history
+vis_mod.VIS_DIR = _V2_VIS_DIR               # patch: save_* functions
 
 from visualization_task2 import (  # type: ignore[import]
     VIS_DIR, print_policy, action_tensor_to_markdown,
-    save_policy_json, save_action_tensor_json, save_q_values,
-    plot_training_history, plot_q_value_history
+    save_policy_json, save_action_tensor_json, save_q_values
 )
 
 # ==================== CONFIGURATION ====================
@@ -319,12 +315,6 @@ def main():
         f.write("- `GOAL` = Goal state (4,4)\n")
         f.write(_similarity_md_section(policy_mc))
     print(f"✓ Saved policies to: {md_path}")
-
-    print("\n📈 Generating training history plots...")
-    plot_training_history(training_history, "MonteCarlo_v2_Training")
-
-    print("\n📈 Generating Q-value history debug plot...")
-    plot_q_value_history(q_snapshots)
 
     summary = {
         "task": "Task 2-v2: Monte Carlo Learning (Sliding Window)",

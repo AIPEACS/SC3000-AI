@@ -28,9 +28,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import agent_task3 as agent
 import scene_map as map0
 from visualization_task3 import (
-    action_tensor_to_markdown, plot_training_history,
-    save_action_tensor_json, save_q_values, print_policy,
-    plot_q_value_history
+    action_tensor_to_markdown,
+    save_action_tensor_json, save_q_values, print_policy
 )
 
 # Parameters
@@ -566,23 +565,6 @@ def main():
         f.write(_convergence_md_section(conv_data))
     print(f"✓ Saved policies to: ./visualization/task3_policies.md")
     
-    # Plot training history
-    print("📈 Generating training history plots...")
-    fig = plot_training_history(training_history, "Q-Learning")
-    plot_path = "./visualization/QLearning_Training_training_history.png"
-    fig.savefig(plot_path, dpi=150, bbox_inches='tight')
-    plt.close(fig)
-    print(f"✓ Plot saved to: {plot_path}")
-
-    # Plot Q-value history
-    print("📈 Generating Q-value history plots...")
-    fig_q = plot_q_value_history(training_history['q_snapshots'])
-    os.makedirs("./debug_visualization/", exist_ok=True)
-    q_plot_path = "./debug_visualization/QLearning_Q_value_history.png"
-    fig_q.savefig(q_plot_path, dpi=150, bbox_inches='tight')
-    plt.close(fig_q)
-    print(f"✓ Q-value history plot saved to: {q_plot_path}")
-
     # Plot convergence
     fig_conv = plot_convergence(conv_data, "Q-Learning Convergence Analysis")
     conv_plot_path = "./visualization/QLearning_Convergence_Analysis.png"
