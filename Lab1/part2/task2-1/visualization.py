@@ -348,6 +348,43 @@ def save_action_tensor_json(policy_det, algorithm_name="Optimal_Policy"):
     return filename
 
 
+def save_q_values(q_state_action, algorithm_name="Q_values"):
+    """
+    Save Q-values to a JSON file.
+
+    Args:
+        q_state_action: 5x5x4 numpy array of Q-values [x, y, action]
+        algorithm_name: Name for the output file
+
+    Returns:
+        str: Path to saved JSON file
+    """
+    q_dict = {
+        "title": algorithm_name,
+        "description": "Q-values for state-action pairs",
+        "shape": [5, 5, 4],
+        "action_map": {"0": "UP", "1": "DOWN", "2": "LEFT", "3": "RIGHT"},
+        "q_values": {}
+    }
+
+    for x in range(5):
+        for y in range(5):
+            state_key = f"({x},{y})"
+            q_dict["q_values"][state_key] = [
+                float(q_state_action[x, y, 0]),  # UP
+                float(q_state_action[x, y, 1]),  # DOWN
+                float(q_state_action[x, y, 2]),  # LEFT
+                float(q_state_action[x, y, 3]),  # RIGHT
+            ]
+
+    filename = os.path.join(VIS_DIR, f"{algorithm_name}.json")
+    with open(filename, 'w') as f:
+        json.dump(q_dict, f, indent=2)
+
+    print(f"✓ Saved Q-values to: {filename}")
+    return filename
+
+
 def save_policy_json(policy_det, algorithm_name="Optimal_Policy", format_type="matrix"):
     """
     Save the policy to a JSON file in the visualization directory.

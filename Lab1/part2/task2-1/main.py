@@ -26,8 +26,33 @@ from agent import (
 import scene_map as map0
 from visualization import (
     VIS_DIR, print_value_function, print_policy, action_tensor_to_markdown,
-    save_policy_json, save_action_tensor_json
+    save_policy_json, save_action_tensor_json, save_q_values
 )
+
+
+# ==================== Q-VALUE EXTRACTION ====================
+
+def compute_q_values(V):
+    """
+    Compute Q(s, a) for every state-action pair from a converged value function.
+
+    Q(s, a) = Σ_s' P(s'|s,a) [R(s') + γ V(s')]
+
+    Args:
+        V: Converged value function dict {(x, y): float}
+
+    Returns:
+        np.ndarray: shape (5, 5, 4) — Q-values indexed [x, y, action_idx]
+    """
+    q = np.zeros((5, 5, 4))
+    for x in range(5):
+        for y in range(5):
+            for a_idx, action in enumerate(ACTIONS):
+                q_val = 0.0
+                for prob, (nx, ny) in get_transition_outcomes(x, y, action):
+                    q_val += prob * (reward_calc(nx, ny) + GAMMA * V[(nx, ny)])
+                q[x, y, a_idx] = q_val
+    return q
 
 
 # ==================== INITIALIZATION FUNCTIONS ====================
@@ -479,6 +504,11 @@ def main():
     save_action_tensor_json(policy_vi, "ValueIteration_Optimal")
     print()
     save_action_tensor_json(policy_pi, "PolicyIteration_Optimal")
+
+    # Export Q-value maps to JSON
+    print("\n📋 Exporting Q-value maps to JSON format...")
+    save_q_values(compute_q_values(V_vi), "ValueIteration_Q_values")
+    save_q_values(compute_q_values(V_pi), "PolicyIteration_Q_values")
     
     # Export action tensors to Markdown
     print("\n📊 Exporting action tensors to Markdown format...")
