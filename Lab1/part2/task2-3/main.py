@@ -441,7 +441,7 @@ def _similarity_md_section(policy):
     """Build an MD section comparing policy vs VI optimal."""
     vi_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            '..', 'task2-1', 'visualization',
-                           'ValueIteration_Optimal_action_tensor.json')
+                           'task1_Optimal_action_tensor.json')
     try:
         with open(vi_path) as f:
             data = json.load(f)
@@ -502,7 +502,7 @@ def main():
     
     # ===== LOAD OPTIMAL POLICY (from Task 1) =====
     try:
-        with open("../task1/visualization/ValueIteration_Optimal_action_tensor.json", 'r') as f:
+        with open("../task2-1/visualization/task1_Optimal_action_tensor.json", 'r') as f:
             task1_data = json.load(f)
             # JSON format: action_tensor[y][x] = action for state (x, y)
             tensor = task1_data["action_tensor"] if isinstance(task1_data, dict) and "action_tensor" in task1_data else task1_data

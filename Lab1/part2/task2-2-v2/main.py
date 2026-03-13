@@ -230,7 +230,7 @@ def _similarity_md_section(policy):
     """Build an MD section comparing policy vs VI optimal. Returns empty string on failure."""
     vi_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            '..', 'task2-1', 'visualization',
-                           'ValueIteration_Optimal_action_tensor.json')
+                           'task1_Optimal_action_tensor.json')
     try:
         with open(vi_path) as f:
             data = json.load(f)
