@@ -368,7 +368,7 @@ def main():
     md_mc = action_tensor_to_markdown(policy_mc, "Monte Carlo - Learned Policy")
     
     md_path = os.path.join(VIS_DIR, 'task2_policies.md')
-    with open(md_path, 'w') as f:
+    with open(md_path, 'w', encoding='utf-8') as f:
         f.write("# Task 2: Monte Carlo Learning\n\n")
         f.write("## Problem\n")
         f.write("5x5 Grid World with stochastic transitions. Unknown environment model.\n")
@@ -403,7 +403,7 @@ def main():
     }
     
     summary_path = os.path.join(VIS_DIR, 'task2_summary.json')
-    with open(summary_path, 'w') as f:
+    with open(summary_path, 'w', encoding='utf-8') as f:
         json.dump(summary, f, indent=2)
     print(f"✓ Saved summary to: {summary_path}")
     

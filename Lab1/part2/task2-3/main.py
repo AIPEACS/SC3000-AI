@@ -560,7 +560,7 @@ def main():
     print("\n Running convergence speed analysis...")
     conv_data = convergence_analysis(training_history)
     
-    with open("./visualization/task3_policies.md", 'w') as f:
+    with open("./visualization/task3_policies.md", 'w', encoding='utf-8') as f:
         f.write(markdown_content)
         f.write(_similarity_md_section(q_learning_policy))
         f.write(_convergence_md_section(conv_data))
@@ -592,7 +592,7 @@ def main():
         "convergence_total_states": conv_data.get('total_sa_pairs', 0),
     }
     
-    with open("./visualization/task3_summary.json", 'w') as f:
+    with open("./visualization/task3_summary.json", 'w', encoding='utf-8') as f:
         json.dump(summary, f, indent=2)
     print(f"✓ Saved summary to: ./visualization/task3_summary.json")
     
