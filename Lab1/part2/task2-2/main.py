@@ -339,7 +339,7 @@ def main():
     print("=" * 60 + "\n")
     
     # -------- MONTE CARLO CONTROL --------
-    Q, policy_mc, training_history, q_snapshots = monte_carlo_control(num_episodes=30000, epsilon=0.1)
+    Q, policy_mc, training_history, q_snapshots = monte_carlo_control(num_episodes=20000, epsilon=0.1)
     
     # -------- EXTRACT Q-VALUES --------
     q_state_action, v_state = q_values_to_array(Q)
