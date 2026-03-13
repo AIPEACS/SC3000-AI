@@ -505,10 +505,9 @@ def main():
     print()
     save_action_tensor_json(policy_pi, "PolicyIteration_Optimal")
 
-    # Export Q-value maps to JSON
-    print("\n📋 Exporting Q-value maps to JSON format...")
-    save_q_values(compute_q_values(V_vi), "ValueIteration_Q_values")
-    save_q_values(compute_q_values(V_pi), "PolicyIteration_Q_values")
+    # Export Q-value map to JSON (VI and PI converge to the same Q*)
+    print("\n📋 Exporting Q-value map to JSON format...")
+    save_q_values(compute_q_values(V_vi), "task1_Q_values")
     
     # Export action tensors to Markdown
     print("\n📊 Exporting action tensors to Markdown format...")
