@@ -1,4 +1,4 @@
-# Lab1 descrption
+# Lab1 description
 
 # part 1
 
@@ -28,7 +28,7 @@ Part 1 explores uninformed and informed graph search algorithms on a **real-worl
 - **State**: Single node (no energy tracking needed)
 
 **Results**:
-- Shortest distance: **148,648.6 decimetres** (~1486.5 km)
+- Shortest distance: **148,648.6**
 - Path length: **122 nodes**
 - States visited: **5,304**
 
