@@ -112,6 +112,8 @@ def main():
         print(f"Number of states visited: {visited_states}.")
     else:
         print("No feasible path found within the energy budget.")
+        
+    
 
 
 if __name__ == "__main__":
