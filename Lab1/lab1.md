@@ -49,7 +49,7 @@ Part 1 explores uninformed and informed graph search algorithms on a **real-worl
   - This prunes suboptimal paths early, reducing the search space
 
 **Results**:
-- Shortest distance: **150,335.6 decimetres** (~1503.4 km) — slightly longer due to energy constraint
+- Shortest distance: **150,335.6** — slightly longer due to energy constraint
 - Total energy used: **259,087 units** (within budget of 287,932)
 - Path length: **122 nodes**
 - States visited: **30,267** — 5.7× more than Task 1 due to expanded state space
