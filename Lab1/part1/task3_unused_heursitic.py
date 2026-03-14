@@ -122,11 +122,11 @@ def main():
         output_lines.append("")
         output_lines.append(f"**Shortest path:** {' → '.join(path)}")
         output_lines.append("")
-        output_lines.append(f"**Shortest distance:** {shortest_dist}")
+        output_lines.append(f"**Shortest distance:** {shortest_dist}, optimality: {1-abs(shortest_dist-150335.55442)/150335.55442:.1%}")
         output_lines.append("")
         output_lines.append(f"**Total energy cost:** {total_energy}")
         output_lines.append("")
-        output_lines.append(f"**Number of nodes in path:** {len(path)}, optimality: {1-abs(shortest_dist-150335.55442)/150335.55442:.1%}")
+        output_lines.append(f"**Number of nodes in path:** {len(path)}")
         output_lines.append("")
         output_lines.append(f"**Number of states visited:** {visited_states}, efficiency improvement: {(30267-visited_states)/30267:.1%}")
     else:
