@@ -101,8 +101,15 @@ def main():
     )
 
     print("=" * 60)
-    print("Task 3 Heursitic Test: A* with Pythagorean + degree coefficient")
-    print(f"Degree-change coefficient: {DEGREE_CHANGE_COEFF} per 1 degree")
+    print(" Task 3: suboptimal A* with Pythagorean Heuristic + Degree Coefficient")
+    print(f"Degree-change coefficient: {DEGREE_CHANGE_COEFF} per 1 degree change")
+
+    # Prepare output content
+    output_lines = []
+    output_lines.append("# Task 3: suboptimal A* with Pythagorean Heuristic + Degree Coefficient")
+    output_lines.append("")
+    output_lines.append(f"**Degree-change coefficient:** {DEGREE_CHANGE_COEFF} per 1 degree change")
+    output_lines.append("")
 
     if path:
         print(f"Shortest path: {'->'.join(path)}.")
@@ -110,8 +117,28 @@ def main():
         print(f"Total energy cost: {total_energy}.")
         print(f"Number of nodes in path: {len(path)}.")
         print(f"Number of states visited: {visited_states}.")
+        
+        output_lines.append("## Results")
+        output_lines.append("")
+        output_lines.append(f"**Shortest path:** {' → '.join(path)}")
+        output_lines.append("")
+        output_lines.append(f"**Shortest distance:** {shortest_dist}")
+        output_lines.append("")
+        output_lines.append(f"**Total energy cost:** {total_energy}")
+        output_lines.append("")
+        output_lines.append(f"**Number of nodes in path:** {len(path)}, optimality: {1-abs(len(path)-122)/122:.1%}")
+        output_lines.append("")
+        output_lines.append(f"**Number of states visited:** {visited_states}, efficiency improvement: {(30267-visited_states)/30267:.1%}")
     else:
         print("No feasible path found within the energy budget.")
+        output_lines.append("## Results")
+        output_lines.append("")
+        output_lines.append("**No feasible path found within the energy budget.**")
+    
+    # Write to markdown file
+    output_file = base_dir / "task3_unused_heuristic.md"
+    with output_file.open("w", encoding="utf-8") as f:
+        f.write("\n".join(output_lines))
         
     
 
