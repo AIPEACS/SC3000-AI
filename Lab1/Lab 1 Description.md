@@ -1,4 +1,4 @@
-# Lab1 description
+# Lab 1 Description
 
 # part 1
 
