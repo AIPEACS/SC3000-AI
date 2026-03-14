@@ -10,6 +10,6 @@
 
 **Total energy cost:** 287931
 
-**Number of nodes in path:** 123, optimality: 99.2%
+**Number of nodes in path:** 123, optimality: 99.7%
 
 **Number of states visited:** 712, efficiency improvement: 97.6%
