@@ -18,13 +18,13 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 import json
 import numpy as np
-from agent import (
+from agent_task1 import (
     STEP_COST, GOAL_REWARD, NET_GOAL_REWARD, GAMMA, 
     ACTIONS, ACTION_MAP, reward_calc, get_next_state, calculate_final_reward,
     get_transition_outcomes
 )
 import scene_map as map0
-from visualization import (
+from visualization_task1 import (
     VIS_DIR, print_value_function, print_policy, action_tensor_to_markdown,
     save_policy_json, save_action_tensor_json, save_q_values
 )

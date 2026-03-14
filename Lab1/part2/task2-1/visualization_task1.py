@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 import scene_map as map0
-from agent import GAMMA, ACTIONS, reward_calc
+from agent_task1 import GAMMA, ACTIONS, reward_calc
 
 
 # ==================== DIRECTORY SETUP ====================
