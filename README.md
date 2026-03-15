@@ -8,6 +8,8 @@ NTU 2026 Sem 2.
 - Contributor: 
   - Hung: Lab 1 Task 1.1, 1.2, 1.3 Haversine heuristic
   - Allen: Lab 1 Task 1.3 Pythagorean Heurstic & Task 2
+- Important notes:
+  - As per assignment munual, Lab 1 Task 2 uses vertical x axis and horizontal y axis.
 ---
 ## Lab artitechtures and designs information:
 - Lab 1: [Lab 1 Description](./Lab1/Lab%201%20Description.md)
