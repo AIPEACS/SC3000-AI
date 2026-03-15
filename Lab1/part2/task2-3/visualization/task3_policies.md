@@ -1,21 +1,22 @@
 ### Q-Learning Learned Policy
 
-| Y\X | 0 | 1 | 2 | 3 | 4 |
+| X\Y | 0 | 1 | 2 | 3 | 4 |
 |-----|---|---|---|---|---|
 | 4 | RIGHT | RIGHT | RIGHT | RIGHT | GOAL |
-| 3 | UP | UP | OBS | UP | UP |
-| 2 | RIGHT | RIGHT | RIGHT | UP | UP |
-| 1 | UP | UP | OBS | UP | UP |
-| 0 | UP | RIGHT | RIGHT | UP | UP |
+| 3 | RIGHT | RIGHT | RIGHT | RIGHT | UP |
+| 2 | UP | OBS | UP | OBS | UP |
+| 1 | UP | RIGHT | UP | RIGHT | UP |
+| 0 | RIGHT | RIGHT | RIGHT | RIGHT | UP |
 
 ## Similarity with Optimal Policy
 
 - **Reference**: Value Iteration optimal policy (Task 2-1)
 - **Evaluated states**: 22 (excludes obstacles and goal)
-- **Matches**: 21 / 22
-- **Similarity**: **95.5%**
+- **Matches**: 20 / 22
+- **Similarity**: **90.9%**
 - **Mismatched states**:
-  - (0,0) learned UP, optimal RIGHT
+  - (0,0) learned RIGHT, optimal UP
+  - (0,2) learned RIGHT, optimal UP
 
 
 ## Convergence Speed Analysis
@@ -28,7 +29,7 @@
 **Valid states tracked**: 22
 **Rolling window**: 1500 episodes
 
-**Convergence point**: Episode `5700`
+**Convergence point**: Episode `5300`
 
 See `QLearning_Convergence_Analysis.png` for plot.
 

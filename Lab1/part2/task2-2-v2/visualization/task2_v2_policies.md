@@ -7,15 +7,15 @@
 
 ## Learned Policy
 
-## Monte Carlo v2 ¡ª Learned Policy
+## Monte Carlo v2 â€” Learned Policy
 
-| Y\X | 0 | 1 | 2 | 3 | 4 |
+| X\Y | 0 | 1 | 2 | 3 | 4 |
 |-----|---|---|---|---|----|
 | 4 | RIGHT | RIGHT | RIGHT | RIGHT | GOAL |
-| 3 | RIGHT | UP | OBS | UP | UP |
-| 2 | UP | RIGHT | RIGHT | UP | UP |
-| 1 | UP | UP | OBS | UP | UP |
-| 0 | RIGHT | RIGHT | RIGHT | UP | UP |
+| 3 | RIGHT | RIGHT | RIGHT | RIGHT | UP |
+| 2 | UP | OBS | UP | OBS | UP |
+| 1 | UP | RIGHT | UP | RIGHT | UP |
+| 0 | UP | RIGHT | UP | UP | LEFT |
 
 ## Legend
 - `UP` / `DOWN` / `LEFT` / `RIGHT` = action
@@ -29,6 +29,6 @@
 - **Matches**: 20 / 22
 - **Similarity**: **90.9%**
 - **Mismatched states**:
-  - (0,2) learned UP, optimal RIGHT
-  - (0,3) learned RIGHT, optimal UP
+  - (0,3) learned UP, optimal RIGHT
+  - (0,4) learned LEFT, optimal UP
 

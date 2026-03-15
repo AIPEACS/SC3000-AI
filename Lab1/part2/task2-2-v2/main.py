@@ -45,6 +45,9 @@ _V2_VIS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'visualiz
 os.makedirs(_V2_VIS_DIR, exist_ok=True)
 vis_mod.VIS_DIR = _V2_VIS_DIR               # patch: save_* functions
 
+_V2_DEBUG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'debug_visualization')
+os.makedirs(_V2_DEBUG_DIR, exist_ok=True)
+
 from visualization_task2 import (  # type: ignore[import]
     VIS_DIR, print_policy, action_tensor_to_markdown,
     save_policy_json, save_action_tensor_json, save_q_values
@@ -289,6 +292,7 @@ def main():
     print_policy(policy_mc, "Monte Carlo v2 (window=1000) — Learned Policy")
 
     # -------- DEBUG: Q-VALUE HISTORY PLOT --------
+    vis_mod.DEBUG_VIS_DIR = _V2_DEBUG_DIR   # patch: save to v2's debug_visualization/
     vis_mod.plot_q_value_history(q_snapshots)
 
     print("\n" + "=" * 60)

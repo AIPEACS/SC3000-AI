@@ -9,13 +9,13 @@ Epsilon-greedy exploration with epsilon=0.1.
 
 ## Monte Carlo - Learned Policy
 
-| Y\X | 0 | 1 | 2 | 3 | 4 |
+| X\Y | 0 | 1 | 2 | 3 | 4 |
 |-----|---|---|---|---|----|
 | 4 | RIGHT | RIGHT | RIGHT | RIGHT | GOAL |
-| 3 | RIGHT | UP | OBS | UP | UP |
-| 2 | UP | RIGHT | RIGHT | UP | UP |
-| 1 | UP | UP | OBS | UP | UP |
-| 0 | RIGHT | RIGHT | RIGHT | UP | UP |
+| 3 | RIGHT | RIGHT | RIGHT | RIGHT | UP |
+| 2 | UP | OBS | UP | OBS | UP |
+| 1 | UP | RIGHT | RIGHT | RIGHT | UP |
+| 0 | UP | RIGHT | RIGHT | RIGHT | UP |
 
 ## Legend
 - `UP` = Move up
@@ -28,9 +28,10 @@ Epsilon-greedy exploration with epsilon=0.1.
 ## Similarity with Optimal Policy
 
 - **Reference**: Value Iteration optimal policy (Task 2-1)
-- **Evaluated states**: 22 (excludes 2 obstacles and goal)
+- **Evaluated states**: 22 (excludes obstacles and goal)
 - **Matches**: 20 / 22
 - **Similarity**: **90.9%**
 - **Mismatched states**:
-  - (0,2) learned UP, optimal RIGHT
-  - (0,3) learned RIGHT, optimal UP
+  - (0,2) learned RIGHT, optimal UP
+  - (1,2) learned RIGHT, optimal UP
+
