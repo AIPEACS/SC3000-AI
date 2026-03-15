@@ -150,92 +150,143 @@ Same A* with expanded state and Pareto dominance as Task 3a, but uses Euclidean 
 
 ## Reinforcement Learning in Stochastic Grid World
 
-Part 2 explores different reinforcement learning and planning algorithms in a **stochastic 5×5 grid world** where:
-- **Start**: (0, 0)
-- **Goal**: (4, 4)
-- **Obstacles**: (2, 1), (2, 3)
-- **Step cost**: -1
-- **Goal reward**: +10 (net = +9)
-- **Discount factor**: γ = 0.9
-- **Stochastic transitions**: 0.8 probability intended action, 0.1 each perpendicular
+Part 2 explores different reinforcement learning and planning algorithms in a **stochastic 5×5 grid world**.
+
+### Environment
+
+- **Grid**: 5×5, coordinates $(x, y)$ where **x is the vertical axis** (0 = bottom, 4 = top) and **y is the horizontal axis** (0 = left, 4 = right)
+- **Start**: $(0, 0)$ — bottom-left
+- **Goal**: $(4, 4)$ — top-right
+- **Obstacles**: $(2, 1)$ and $(2, 3)$
+- **Step cost**: $-1$; **Goal reward**: $+10$ (net $= +9$)
+- **Discount factor**: $\gamma = 0.9$
+- **Stochastic transitions**: 0.8 probability of intended action, 0.1 each perpendicular direction
 
 All tasks use the same environment defined in `scene_map.py`.
 
+---
+
 ### Task 2-1: Planning with Known Model (Value & Policy Iteration)
 
-**Scenario**: The agent **knows** the exact transition probabilities (0.8 intended, 0.1 perpendicular each).
+**Scenario**: The agent **knows** the exact transition probabilities.
 
 #### Value Iteration
-- **Goal**: Find the optimal value function $V^*(s)$ by iteratively applying the Bellman optimality equation
-- **Update rule**: $V(s) ← \max_a \sum_{s'} P(s'|s,a)[R(s') + \gamma V(s')]$
-- **Convergence**: Guaranteed when max value change $\delta < \theta$ (default: $10^{-6}$)
-- **Output**: Deterministic greedy policy extracted from optimal values
+- **Update rule**: $V(s) \leftarrow \max_a \sum_{s'} P(s'|s,a)\bigl[R(s') + \gamma V(s')\bigr]$
+- **Convergence threshold**: $\delta < 10^{-6}$
 
 #### Policy Iteration
-- **Goal**: Find the optimal policy $\pi^*(s)$ by alternating between evaluation and improvement
-- **Policy Evaluation**: Compute $V^π(s) = \sum_a \pi(a|s) \sum_{s'} P(s'|s,a)[R(s') + \gamma V^π(s')]$
-- **Policy Improvement**: Extract greedy policy $\pi'(s) = \arg\max_a Q^π(s,a)$
-- **Convergence**: When policy stops changing
-- **Result**: Often converges faster than value iteration (fewer iterations)
+- **Policy Evaluation**: Solve $V^\pi(s) = \sum_a \pi(a|s)\sum_{s'} P(s'|s,a)\bigl[R(s') + \gamma V^\pi(s')\bigr]$
+- **Policy Improvement**: $\pi'(s) = \arg\max_a Q^\pi(s,a)$
+- **Convergence**: When policy stops changing across a full sweep
 
-**Key insight**: Both algorithms produce identical optimal policies, enabling direct comparison.
+Both algorithms produce the **identical** optimal policy:
+
+| X\Y | 0 | 1 | 2 | 3 | 4 |
+|-----|---|---|---|---|---|
+| **4** | RIGHT | RIGHT | RIGHT | RIGHT | GOAL |
+| **3** | RIGHT | RIGHT | RIGHT | RIGHT | UP |
+| **2** | UP | OBS | UP | OBS | UP |
+| **1** | UP | RIGHT | UP | RIGHT | UP |
+| **0** | UP | RIGHT | UP | RIGHT | UP |
+
+**Key insight**: Policy Iteration typically converges in fewer iterations than Value Iteration; both yield the same optimal policy.
+
+---
 
 ### Task 2-2: Learning with Unknown Model (Monte Carlo Control)
 
-**Scenario**: The agent **does NOT know** transition probabilities and must learn from experience.
+**Scenario**: Transition probabilities are **unknown**; the agent learns purely from sampled episodes.
 
-#### Monte Carlo (MC) Control Algorithm
-- **Method**: On-policy first-visit Monte Carlo with **epsilon-greedy** exploration ($\epsilon = 0.1$)
-- **Training**: 
-  - Generate full episodes by executing epsilon-greedy actions to termination
-  - Compute discounted returns $G_t = \sum_{k=0}^{T-t} \gamma^k R_{t+k}$
-  - Track all returns for each (state, action) pair
-  - Update Q-values: $Q(s,a) ← \text{mean of all returns for } (s,a)$
-- **Data structure**: Dictionary of lists — `returns[(s,a)] = [G₁, G₂, ...]`
-- **Convergence**: Gradual as episodes increase; final Q estimates used to extract deterministic policy
+#### Algorithm: On-Policy First-Visit MC Control
+- **Exploration**: $\epsilon$-greedy with $\epsilon = 0.1$
+- **Return**: $G_t = \sum_{k=0}^{T-t} \gamma^k R_{t+k}$ (computed backwards per episode)
+- **Q-update**: $Q(s,a) \leftarrow \text{mean of all returns collected for } (s,a)$
+- **Data structure**: `returns[(s,a)] = [G_1, G_2, \ldots]` — unbounded list; all historical returns averaged
+- **Training**: 20,000 episodes, $\epsilon = 0.1$
 
-**Result**: Learned policy compared against Task 2-1's optimal policy; typically achieves 95-100% match rate.
+#### Results (single run)
+- **Policy match vs VI optimal**: **90.9%** (20 / 22 valid states)
+- **Mismatched states**: $(0,2)$ learned RIGHT (optimal UP), $(1,2)$ learned RIGHT (optimal UP)
+
+---
 
 ### Task 2-2-v2: Monte Carlo with Sliding-Window Returns
 
-**Scenario**: Same as Task 2-2, but uses a **fixed-size window** instead of all historical returns.
+**Scenario**: Same as Task 2-2, but Q-values are estimated from only the **most recent 1000 returns** per $(s,a)$.
 
 #### Modification
-- **Data structure**: `collections.deque(maxlen=1000)` — maintains only the most recent 1000 returns per (s,a)
-- **Benefit**: 
-  - Discards stale returns collected under early (suboptimal) policies
-  - Q-values track the current near-optimal policy more faithfully
-  - Reduces memory usage for long training runs
-- **Implementation**: `returns[(s,a)].append(G)` automatically removes the oldest return when full
+- **Data structure**: `collections.deque(maxlen=1000)` — oldest return auto-discarded when full
+- **Motivation**: Averaging all historical returns weights early (suboptimal) policy samples equally with recent ones. The sliding window discards stale data so Q-values track the current near-optimal policy more faithfully.
+- **Training**: 20,000 episodes, $\epsilon = 0.1$, window size = 1000
 
-**Comparison**: Task 2-2-v2 policies typically match the optimal policy **better** than Task 2-2 because recent returns are given more weight.
+#### Results (single run)
+- **Policy match vs VI optimal**: **90.9%** (20 / 22 valid states)
+- **Mismatched states**: $(0,0)$ learned RIGHT (optimal UP), $(1,0)$ learned RIGHT (optimal UP)
+
+---
 
 ### Task 2-3: Learning with Unknown Model (Q-Learning)
 
-**Scenario**: Off-policy learning where the agent improves via Q-learning while exploring with epsilon-greedy.
+**Scenario**: Off-policy TD learning — updates Q-values after every single step.
 
-#### Q-Learning Algorithm
-- **Method**: Temporal-Difference (TD) learning — updates Q-values from single-step transitions (not full episodes)
-- **Update rule**: $Q(s,a) ← Q(s,a) + \alpha [R(s') + \gamma \max_{a'} Q(s',a') - Q(s,a)]$
-  - **Learning rate**: $\alpha = 0.1$ (controls update magnitude)
-  - **Bootstrap**: Uses max Q-value at next state (greedy targeting, not current action)
-- **Off-policy**: Can learn optimal policy while exploring with suboptimal actions
-- **Convergence**: Guaranteed under appropriate learning rate decay
-- **Advantages over MC**:
-  - Updates after **each step**, not just episode end (faster learning)
-  - Does not require trajectory to goal (learns from partial episodes)
-  - Typically converges with fewer training steps
+#### Algorithm: Tabular Q-Learning
+- **Update rule**: $Q(s,a) \leftarrow Q(s,a) + \alpha\bigl[R(s') + \gamma \max_{a'} Q(s', a') - Q(s,a)\bigr]$
+- **Learning rate**: $\alpha = 0.1$; **Exploration**: $\epsilon = 0.1$ (fixed)
+- **Off-policy**: bootstraps greedily at next state, decoupled from current exploration policy
+- **Training**: 50,000 episodes
 
-**Result**: Q-Learning usually matches optimal policy better than Monte Carlo due to faster learning and off-policy nature.
+#### Convergence Analysis
+Convergence is declared when **both** of the following hold over a rolling 1500-episode window:
+1. **Policy stability**: every valid state's greedy action switches between at most 2 actions across the window
+2. **Q-value stability**: $|Q_{\text{end}}(s,a) - Q_{\text{start}}(s,a)| \leq 1$ for all $(s,a)$
+
+**Convergence point: Episode 5,300** (out of 50,000 trained)
+
+#### Results (single run)
+- **Policy match vs VI optimal**: **90.9%** (20 / 22 valid states)
+- **Mismatched states**: $(0,0)$ learned RIGHT (optimal UP), $(0,2)$ learned RIGHT (optimal UP)
+
+#### Learned Policy
+
+| X\Y | 0 | 1 | 2 | 3 | 4 |
+|-----|---|---|---|---|---|
+| **4** | RIGHT | RIGHT | RIGHT | RIGHT | GOAL |
+| **3** | RIGHT | RIGHT | RIGHT | RIGHT | UP |
+| **2** | UP | OBS | UP | OBS | UP |
+| **1** | UP | RIGHT | UP | RIGHT | UP |
+| **0** | RIGHT | RIGHT | RIGHT | RIGHT | UP |
+
+---
+
+### MC v2 vs Q-Learning: Statistical Comparison (50 runs × 20,000 episodes)
+
+To fairly compare Monte Carlo v2 and Q-Learning under identical conditions, both algorithms were trained 50 independent times with 20,000 episodes each and evaluated against the VI optimal policy (`compare_MC_QL.py`).
+
+| Metric | Monte Carlo v2 | Q-Learning |
+|--------|:--------------:|:----------:|
+| **Mean accuracy** | 85.09% | **88.82%** |
+| **Standard deviation** | 10.12% | **6.25%** |
+| **Variance** | 102.51 | **39.02** |
+| Min | 63.64% | 68.18% |
+| Max | 100.00% | 100.00% |
+| Median | 86.36% | **90.91%** |
+
+**Key findings**:
+1. **Q-Learning is more accurate**: +3.7 percentage points higher mean accuracy than MC v2 at equal episode counts.
+2. **Q-Learning is more stable**: variance 2.6× lower than MC v2, meaning its policy quality is far more consistent run-to-run.
+3. **MC v2 has higher variance**: unbounded averaging of *all* historical returns under any policy introduces noise; the sliding window mitigates this vs plain MC but Q-Learning's per-step TD updates still converge faster.
+4. **Q-Learning converges earlier**: declared convergent at episode 5,300 — meaning 14,700 of the 20,000 episodes are consolidation, whereas MC v2 continues accumulating returns throughout.
+
+---
 
 ### Summary: Algorithm Comparison
 
-| Algorithm | Transition Model | Data Collection | Update Frequency | Convergence Speed |
-|-----------|------------------|-----------------|------------------|-------------------|
-| **Value Iteration** | Known | Computed (dynamic programming) | All states each iteration | Fast (guaranteed) |
-| **Policy Iteration** | Known | Computed (dynamic programming) | Policy-level iterations | Typically fastest |
-| **Monte Carlo (2-2)** | Unknown | Full episodes | Once per episode | Slow (many episodes) |
-| **Monte Carlo-v2 (2-2-v2)** | Unknown | Full episodes (windowed) | Once per episode | Slow but better estimates |
-| **Q-Learning (2-3)** | Unknown | Single transitions | Every step (online) | Faster than MC |
+| Algorithm | Model | Data | Update | Match (single) | Mean ± Std (50 runs) |
+|-----------|-------|------|--------|:--------------:|:--------------------:|
+| **Value Iteration** | Known | DP | All states / iter | 100% (reference) | — |
+| **Policy Iteration** | Known | DP | Policy sweeps | 100% (reference) | — |
+| **Monte Carlo (2-2)** | Unknown | Full episodes | End of episode | 90.9% | — |
+| **Monte Carlo v2 (2-2-v2)** | Unknown | Full episodes (window=1000) | End of episode | 90.9% | 85.1% ± 10.1% |
+| **Q-Learning (2-3)** | Unknown | Single steps (TD) | Every step | 90.9% | **88.8% ± 6.3%** |
 
 ---
