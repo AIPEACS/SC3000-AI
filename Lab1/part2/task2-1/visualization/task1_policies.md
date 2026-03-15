@@ -7,23 +7,23 @@
 
 ## Value Iteration - Optimal Policy
 
-| Y\X | 0 | 1 | 2 | 3 | 4 |
+| X\Y | 0 | 1 | 2 | 3 | 4 |
 |-----|---|---|---|---|----|
 | 4 | RIGHT | RIGHT | RIGHT | RIGHT | GOAL |
-| 3 | UP | UP | OBS | UP | UP |
-| 2 | RIGHT | RIGHT | RIGHT | UP | UP |
-| 1 | UP | UP | OBS | UP | UP |
-| 0 | RIGHT | RIGHT | RIGHT | UP | UP |
+| 3 | RIGHT | RIGHT | RIGHT | RIGHT | UP |
+| 2 | UP | OBS | UP | OBS | UP |
+| 1 | UP | RIGHT | UP | RIGHT | UP |
+| 0 | UP | RIGHT | UP | RIGHT | UP |
 
 ## Policy Iteration - Optimal Policy
 
-| Y\X | 0 | 1 | 2 | 3 | 4 |
+| X\Y | 0 | 1 | 2 | 3 | 4 |
 |-----|---|---|---|---|----|
 | 4 | RIGHT | RIGHT | RIGHT | RIGHT | GOAL |
-| 3 | UP | UP | OBS | UP | UP |
-| 2 | RIGHT | RIGHT | RIGHT | UP | UP |
-| 1 | UP | UP | OBS | UP | UP |
-| 0 | RIGHT | RIGHT | RIGHT | UP | UP |
+| 3 | RIGHT | RIGHT | RIGHT | RIGHT | UP |
+| 2 | UP | OBS | UP | OBS | UP |
+| 1 | UP | RIGHT | UP | RIGHT | UP |
+| 0 | UP | RIGHT | UP | RIGHT | UP |
 
 ## Legend
 - `UP` = Move up
