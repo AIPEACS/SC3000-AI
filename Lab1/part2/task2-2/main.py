@@ -27,7 +27,8 @@ from agent_task2 import (
 import scene_map as map0
 from visualization_task2 import (
     VIS_DIR, print_policy, action_tensor_to_markdown,
-    save_policy_json, save_action_tensor_json, save_q_values
+    save_policy_json, save_action_tensor_json, save_q_values,
+    plot_q_value_history
 )
 
 
@@ -292,7 +293,7 @@ def _similarity_md_section(policy):
         with open(vi_path) as f:
             data = json.load(f)
         tensor = data["action_tensor"]
-        optimal = {(x, y): int(tensor[y][x]) for y in range(5) for x in range(5)}
+        optimal = {(x, y): int(tensor[x][y]) for x in range(5) for y in range(5)}
     except Exception as e:
         return f"\n## Similarity with Optimal Policy\n\n_Could not load VI optimal: {e}_\n"
     action_names = {0: 'UP', 1: 'DOWN', 2: 'LEFT', 3: 'RIGHT', -1: 'GOAL'}
@@ -349,6 +350,9 @@ def main():
     print("LEARNED POLICY")
     print("=" * 60)
     print_policy(policy_mc, "Monte Carlo - Learned Policy")
+    
+    # -------- DEBUG: Q-VALUE HISTORY PLOT --------
+    plot_q_value_history(q_snapshots)
     
     # -------- RESULTS EXPORT --------
     print("\n" + "=" * 60)

@@ -18,18 +18,18 @@ mess_up_probability = 0.2
 
 def move_function_at_position(x,y,direction):
     
-	# move up
-	if direction == "u" and y < 4 and (x,y+1) not in road_blocking:
-		return (x,y+1)
-	# move down
-	elif direction == "d" and y > 0 and (x,y-1) not in road_blocking:
-		return (x,y-1)
-	# move left
-	elif direction == "l" and x > 0 and (x-1,y) not in road_blocking:
-		return (x-1,y)
-	# move right
-	elif direction == "r" and x < 4 and (x+1,y) not in road_blocking:
+	# move up: x increases (x is vertical axis)
+	if direction == "u" and x < 4 and (x+1,y) not in road_blocking:
 		return (x+1,y)
+	# move down: x decreases
+	elif direction == "d" and x > 0 and (x-1,y) not in road_blocking:
+		return (x-1,y)
+	# move left: y decreases (y is horizontal axis)
+	elif direction == "l" and y > 0 and (x,y-1) not in road_blocking:
+		return (x,y-1)
+	# move right: y increases
+	elif direction == "r" and y < 4 and (x,y+1) not in road_blocking:
+		return (x,y+1)
 	# if the moving direction is not available, stay at the same position
 	else:
 		return (x,y)

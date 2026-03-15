@@ -51,10 +51,10 @@ def print_value_function(V, title="Value Function"):
     """
     print(f"\n{title}:")
     print("-" * 50)
-    # Print in visual order: top to bottom (y descending), left to right (x ascending)
-    for y in range(4, -1, -1):
+    # Print in visual order: top to bottom (x descending), left to right (y ascending)
+    for x in range(4, -1, -1):
         row = []
-        for x in range(5):
+        for y in range(5):
             if (x, y) in map0.road_blocking:
                 row.append("  [X]  ")
             else:
@@ -73,10 +73,10 @@ def print_policy(policy_det, title="Optimal Policy"):
     """
     print(f"\n{title}:")
     print("-" * 50)
-    # Print in visual order: top to bottom (y descending), left to right (x ascending)
-    for y in range(4, -1, -1):
+    # Print in visual order: top to bottom (x descending), left to right (y ascending)
+    for x in range(4, -1, -1):
         row = []
-        for x in range(5):
+        for y in range(5):
             if (x, y) in map0.road_blocking:
                 row.append(" [X] ")
             else:
@@ -99,13 +99,13 @@ def action_tensor_to_markdown(policy_det, title="Optimal Policy"):
     action_names = {0: 'UP', 1: 'DOWN', 2: 'LEFT', 3: 'RIGHT', -1: 'GOAL'}
     
     markdown = f"## {title}\n\n"
-    markdown += "| Y\\X | 0 | 1 | 2 | 3 | 4 |\n"
+    markdown += "| X\\Y | 0 | 1 | 2 | 3 | 4 |\n"
     markdown += "|-----|---|---|---|---|----|\n"
     
-    # Print in visual order: top to bottom (y descending), left to right (x ascending)
-    for y in range(4, -1, -1):
-        row = [f"| {y} |"]
-        for x in range(5):
+    # Print in visual order: top to bottom (x descending), left to right (y ascending)
+    for x in range(4, -1, -1):
+        row = [f"| {x} |"]
+        for y in range(5):
             if (x, y) in map0.road_blocking:
                 row.append(" OBS |")
             else:
@@ -217,10 +217,10 @@ def policy_to_json_matrix(policy_det):
         "grid": []
     }
     
-    # Convert to visual grid format (y descending)
-    for y in range(4, -1, -1):
+    # Convert to visual grid format (x descending)
+    for x in range(4, -1, -1):
         row = []
-        for x in range(5):
+        for y in range(5):
             if (x, y) in map0.road_blocking:
                 row.append({
                     "position": [x, y],
@@ -310,10 +310,10 @@ def policy_to_action_tensor(policy_det, title="Action Tensor"):
         "action_tensor": []
     }
     
-    # Convert to list of lists in [y][x] format (standard row-major)
-    for y in range(5):
+    # Convert to list of lists in [x][y] format matching the axis convention
+    for x in range(5):
         row = []
-        for x in range(5):
+        for y in range(5):
             row.append(int(policy_det[(x, y)]))
         action_tensor["action_tensor"].append(row)
     

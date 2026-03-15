@@ -48,10 +48,10 @@ def print_policy(policy_det, title="Learned Policy"):
     """
     print(f"\n{title}:")
     print("-" * 50)
-    # Print in visual order: top to bottom (y descending), left to right (x ascending)
-    for y in range(4, -1, -1):
+    # Print in visual order: top to bottom (x descending), left to right (y ascending)
+    for x in range(4, -1, -1):
         row = []
-        for x in range(5):
+        for y in range(5):
             if (x, y) in map0.road_blocking:
                 row.append(" [X] ")
             else:
@@ -74,13 +74,13 @@ def action_tensor_to_markdown(policy_det, title="Learned Policy"):
     action_names = {0: 'UP', 1: 'DOWN', 2: 'LEFT', 3: 'RIGHT', -1: 'GOAL'}
     
     markdown = f"## {title}\n\n"
-    markdown += "| Y\\X | 0 | 1 | 2 | 3 | 4 |\n"
+    markdown += "| X\\Y | 0 | 1 | 2 | 3 | 4 |\n"
     markdown += "|-----|---|---|---|---|----|\n"
     
-    # Print in visual order: top to bottom (y descending), left to right (x ascending)
-    for y in range(4, -1, -1):
-        row = [f"| {y} |"]
-        for x in range(5):
+    # Print in visual order: top to bottom (x descending), left to right (y ascending)
+    for x in range(4, -1, -1):
+        row = [f"| {x} |"]
+        for y in range(5):
             if (x, y) in map0.road_blocking:
                 row.append(" OBS |")
             else:
@@ -118,10 +118,10 @@ def policy_to_action_tensor(policy_det, title="Action Tensor"):
         "action_tensor": []
     }
     
-    # Convert to list of lists in [y][x] format (standard row-major)
-    for y in range(5):
+    # Convert to list of lists in [x][y] format matching the axis convention
+    for x in range(5):
         row = []
-        for x in range(5):
+        for y in range(5):
             row.append(int(policy_det[(x, y)]))
         action_tensor["action_tensor"].append(row)
     
@@ -233,4 +233,93 @@ def save_policy_json(policy_det, algorithm_name="Learned_Policy"):
     print(f"✓ Saved policy to: {filename}")
     
     return filename
+
+
+# ==================== Q-VALUE HISTORY PLOT ====================
+
+DEBUG_VIS_DIR = os.path.join(os.path.dirname(__file__), "debug_visualization")
+os.makedirs(DEBUG_VIS_DIR, exist_ok=True)
+
+
+def plot_q_value_history(q_snapshots):
+    """
+    Plot Q-value evolution over MC training for all 25 states.
+
+    Layout: 5x5 grid of subplots matching grid coordinates
+    (row 0 = x=4 at top, row 4 = x=0 at bottom; col = y).
+    Each subplot shows 4 lines for actions u/d/l/r.
+    Goal state and obstacle states are annotated instead of plotted.
+
+    Args:
+        q_snapshots: list of (episode, snapshot_dict) recorded every 100 episodes
+            snapshot_dict: {(x,y): {'u': v, 'd': v, 'l': v, 'r': v}}
+    """
+    ACTIONS_LIST = ['u', 'd', 'l', 'r']
+    ACTION_LABELS = {'u': 'Up', 'd': 'Down', 'l': 'Left', 'r': 'Right'}
+    ACTION_COLORS = {'u': '#1f77b4', 'd': '#ff7f0e', 'l': '#2ca02c', 'r': '#d62728'}
+
+    episodes = [ep for ep, _ in q_snapshots]
+
+    fig, axes = plt.subplots(5, 5, figsize=(22, 18), sharex=False)
+    fig.suptitle(
+        f'MC Q-Value Update History — sampled every 100 episodes\n'
+        f'({len(episodes)} snapshots, {episodes[-1]} total episodes)',
+        fontsize=14, fontweight='bold'
+    )
+
+    for row in range(5):
+        x = 4 - row          # row 0 → x=4, row 4 → x=0
+        for col in range(5):
+            y = col           # col 0 → y=0
+            ax = axes[row, col]
+            ax.set_title(f'({x},{y})', fontsize=8, pad=2)
+
+            if (x, y) == map0.end_point:
+                ax.text(0.5, 0.5, 'GOAL', ha='center', va='center',
+                        fontsize=14, fontweight='bold', color='green',
+                        transform=ax.transAxes)
+                ax.set_facecolor('#e8f5e9')
+                ax.set_xticks([])
+                ax.set_yticks([])
+                continue
+
+            if (x, y) in map0.road_blocking:
+                ax.text(0.5, 0.5, 'OBS', ha='center', va='center',
+                        fontsize=14, fontweight='bold', color='gray',
+                        transform=ax.transAxes)
+                ax.set_facecolor('#f5f5f5')
+                ax.set_xticks([])
+                ax.set_yticks([])
+                continue
+
+            for action in ACTIONS_LIST:
+                q_series = [snap[(x, y)][action] for _, snap in q_snapshots]
+                ax.plot(episodes, q_series,
+                        color=ACTION_COLORS[action],
+                        linewidth=1.0,
+                        label=ACTION_LABELS[action])
+
+            ax.axhline(0, color='black', linewidth=0.4, linestyle='--', alpha=0.4)
+            ax.set_xlim(episodes[0], episodes[-1])
+            ax.tick_params(labelsize=6)
+            ax.grid(True, alpha=0.2)
+
+    fig.text(0.5, 0.01, 'Episode', ha='center', fontsize=11)
+    fig.text(0.01, 0.5, 'Q-Value', va='center', rotation='vertical', fontsize=11)
+
+    handles = [
+        plt.Line2D([0], [0], color=ACTION_COLORS[a], linewidth=2, label=ACTION_LABELS[a])
+        for a in ACTIONS_LIST
+    ]
+    fig.legend(handles=handles, loc='lower right', fontsize=10,
+               title='Action', title_fontsize=10, framealpha=0.9,
+               bbox_to_anchor=(0.99, 0.02))
+
+    plt.tight_layout(rect=[0.02, 0.03, 1.0, 0.95])
+
+    plot_path = os.path.join(DEBUG_VIS_DIR, 'MonteCarlo_Q_value_history.png')
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    print(f"\n✓ Q-value history plot saved to: {plot_path}")
+    plt.close()
+    return fig
 

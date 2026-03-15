@@ -29,7 +29,8 @@ import agent_task3 as agent
 import scene_map as map0
 from visualization_task3 import (
     action_tensor_to_markdown,
-    save_action_tensor_json, save_q_values, print_policy
+    save_action_tensor_json, save_q_values, print_policy,
+    plot_q_value_history, DEBUG_VIS_DIR
 )
 
 # Parameters
@@ -446,7 +447,7 @@ def _similarity_md_section(policy):
         with open(vi_path) as f:
             data = json.load(f)
         tensor = data["action_tensor"]
-        optimal = {(x, y): int(tensor[y][x]) for y in range(5) for x in range(5)}
+        optimal = {(x, y): int(tensor[x][y]) for x in range(5) for y in range(5)}
     except Exception as e:
         return f"\n## Similarity with Optimal Policy\n\n_Could not load VI optimal: {e}_\n"
     action_names = {0: 'UP', 1: 'DOWN', 2: 'LEFT', 3: 'RIGHT', -1: 'GOAL'}
@@ -506,7 +507,7 @@ def main():
             task1_data = json.load(f)
             # JSON format: action_tensor[y][x] = action for state (x, y)
             tensor = task1_data["action_tensor"] if isinstance(task1_data, dict) and "action_tensor" in task1_data else task1_data
-            optimal_policy = {(x, y): int(tensor[y][x]) for y in range(5) for x in range(5)}
+            optimal_policy = {(x, y): int(tensor[x][y]) for x in range(5) for y in range(5)}
     except (FileNotFoundError, TypeError, KeyError) as e:
         print(f"Warning: Could not load Task 1 optimal policy: {e}")
         optimal_policy = {}
@@ -517,7 +518,7 @@ def main():
             task2_data = json.load(f)
             # JSON format: action_tensor[y][x] = action for state (x, y)
             tensor = task2_data["action_tensor"] if isinstance(task2_data, dict) and "action_tensor" in task2_data else task2_data
-            mc_policy = {(x, y): int(tensor[y][x]) for y in range(5) for x in range(5)}
+            mc_policy = {(x, y): int(tensor[x][y]) for x in range(5) for y in range(5)}
     except (FileNotFoundError, TypeError, KeyError) as e:
         print(f"Warning: Could not load Task 2 Monte Carlo policy: {e}")
         mc_policy = {}
@@ -571,8 +572,13 @@ def main():
     conv_plot_path = "./visualization/QLearning_Convergence_Analysis.png"
     fig_conv.savefig(conv_plot_path, dpi=150, bbox_inches='tight')
     plt.close(fig_conv)
-    print(f"✓ Convergence plot saved to: {conv_plot_path}")
-    
+    print(f"✓ Convergence plot saved to: {conv_plot_path}")    
+    # Q-value history debug plot
+    fig_qhist = plot_q_value_history(training_history['q_snapshots'])
+    qhist_path = os.path.join(DEBUG_VIS_DIR, 'QLearning_Q_value_history.png')
+    fig_qhist.savefig(qhist_path, dpi=150, bbox_inches='tight')
+    plt.close(fig_qhist)
+    print(f"\u2713 Q-value history plot saved to: {qhist_path}")    
     # Save summary
     print(" Creating summary report...")
     summary = {
