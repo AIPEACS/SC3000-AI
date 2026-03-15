@@ -9,6 +9,6 @@
   "goal_reward": 10,
   "training": {
     "final_episode_reward": 0.0,
-    "avg_reward_last_100": -0.53
+    "avg_reward_last_100": -1.33
   }
 }
