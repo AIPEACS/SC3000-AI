@@ -14,8 +14,8 @@
 | 4 | RIGHT | RIGHT | RIGHT | RIGHT | GOAL |
 | 3 | RIGHT | RIGHT | RIGHT | RIGHT | UP |
 | 2 | UP | OBS | UP | OBS | UP |
-| 1 | UP | RIGHT | UP | RIGHT | UP |
-| 0 | UP | RIGHT | UP | UP | LEFT |
+| 1 | RIGHT | RIGHT | UP | RIGHT | UP |
+| 0 | RIGHT | RIGHT | UP | RIGHT | UP |
 
 ## Legend
 - `UP` / `DOWN` / `LEFT` / `RIGHT` = action
@@ -29,6 +29,6 @@
 - **Matches**: 20 / 22
 - **Similarity**: **90.9%**
 - **Mismatched states**:
-  - (0,3) learned UP, optimal RIGHT
-  - (0,4) learned LEFT, optimal UP
+  - (0,0) learned RIGHT, optimal UP
+  - (1,0) learned RIGHT, optimal UP
 
