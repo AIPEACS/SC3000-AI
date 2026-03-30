@@ -15,7 +15,7 @@ NTU 2026 Sem 2.
 - Lab 1: [Lab 1 Description](./Lab1/Lab%201%20Description.md)
 - Lab 2: TBD
 ---
-## Lab 1 Task 2.2 — Monte Carlo Q-Learning
+## Lab 1 Task 2.2 — Monte Carlo Reinforcement Learning
 - Author: Allen
 
 ### Standard Method
