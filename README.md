@@ -20,8 +20,8 @@ NTU 2026 Sem 2.
 ---
 
 ## Lab architectures and designs information:
-- Lab 1: [Lab 1 Detailed Description](./Lab1/Lab%201%20Description.md)
-- Lab 2: [Lab 2 Detailed Description](./Lab2/Lab%202%20Description.md)
+- Lab 1 [Detailed Description](./Lab1/Lab%201%20Description.md)
+- Lab 2 [Detailed Description](./Lab2/Lab%202%20Description.md)
 
 ---
 
