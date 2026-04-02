@@ -1,20 +1,30 @@
 # SC3000 Artificial Intelligence Lab 
 
 NTU 2026 Sem 2.
+- Lab 1
+  - Task 1: Using different search algorithms to find a path from start to end in a grid world.
+  - Task 2: Implementing Monte Carlo and Q-Learning Reinforcement Learning to solve a maze.
+- Lab 2:
+  - Task 1: TBD
+  - Task 2: TBD
 
 ---
 
-## Informortion
+## Information
 - Contributor: 
-  - Hung: Lab 1 Task 1
-  - Allen: Lab 1 Task 2
+  - Hung: Lab 1 Task 1, Lab 2 Task 2
+  - Allen: Lab 1 Task 2, Lab 2 Task 1
 - Important notes:
-  - As per assignment munual, Lab 1 Task 2 uses vertical x axis and horizontal y axis.
+  - As per assignment manual, Lab 1 Task 2 uses vertical x axis and horizontal y axis.
+
 ---
-## Lab artitechtures and designs information:
-- Lab 1: [Lab 1 Description](./Lab1/Lab%201%20Description.md)
-- Lab 2: TBD
+
+## Lab architectures and designs information:
+- Lab 1: [Lab 1 Detailed Description](./Lab1/Lab%201%20Description.md)
+- Lab 2: [Lab 2 Detailed Description](./Lab2/Lab%202%20Description.md)
+
 ---
+
 ## Notable Developments
 ### Lab 1 Task 2.2 — Monte Carlo Reinforcement Learning
 - Author: Allen
@@ -61,10 +71,10 @@ A similar algorithmic idea can be found in other agent-related papers (Mnih et a
 
 This solution is stored in [`./Lab1/part2/task2-2-v2`](./Lab1/part2/task2-2-v2). The algorithm also reaches **90.9% similarity** with the optimal solution, but computed in a much shorter time — the time to average and space to store the data becomes $O(1)$.
 
----
-
-### References
+#### References
 
 Sutton, R. S., & Barto, A. G. (2018). *Reinforcement learning: An introduction* (2nd ed.). MIT Press. http://incompleteideas.net/book/the-book-2nd.html
 
 Mnih, V., Kavukcuoglu, K., Silver, D., Graves, A., Antonoglou, I., Wierstra, D., & Riedmiller, M. (2013). Playing Atari with deep reinforcement learning. *arXiv*. https://arxiv.org/abs/1312.5602
+
+---
