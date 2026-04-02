@@ -15,10 +15,11 @@ NTU 2026 Sem 2.
 - Lab 1: [Lab 1 Description](./Lab1/Lab%201%20Description.md)
 - Lab 2: TBD
 ---
-## Lab 1 Task 2.2 — Monte Carlo Reinforcement Learning
+## Notable Developments
+### Lab 1 Task 2.2 — Monte Carlo Reinforcement Learning
 - Author: Allen
 
-### Standard Method
+#### Standard Method
 
 The standard definition of the Q-value is:
 
@@ -36,7 +37,7 @@ This solution is stored in [`./Lab1/part2/task2-2`](./Lab1/part2/task2-2), reach
 
 ---
 
-### Issues with the Standard Method
+#### Issues with the Standard Method
 
 The standard cumulative method introduces two problems:
 
@@ -45,7 +46,7 @@ The standard cumulative method introduces two problems:
 
 ---
 
-### Improved Method — Sliding-Window Returns (Task 2.2-v2)
+#### Improved Method — Sliding-Window Returns (Task 2.2-v2)
 
 To address both issues, I further improved the solution to average only over the **most recent 1000 returns**:
 
