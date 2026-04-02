@@ -29,7 +29,7 @@ NTU 2026 Sem 2.
 ### Lab 1 Task 2.2 — Monte Carlo Reinforcement Learning
 - Author: Allen
 
-#### Standard Method
+#### **Standard Method**
 
 The standard definition of the Q-value is:
 
@@ -45,18 +45,14 @@ This does not strictly follow the definition above, since the mathematical defin
 
 This solution is stored in [`./Lab1/part2/task2-2`](./Lab1/part2/task2-2), reaching **90.9% similarity** with the optimal solution.
 
----
-
-#### Issues with the Standard Method
+#### **Issues with the Standard Method**
 
 The standard cumulative method introduces two problems:
 
 1. **Memory**: as episodes increase, storage grows linearly — $O(n)$.
 2. **Staleness**: although policy changes are small per episode, accumulating all past returns can introduce errors over many episodes.
 
----
-
-#### Improved Method — Sliding-Window Returns (Task 2.2-v2)
+#### **Improved Method — Sliding-Window Returns (Task 2.2-v2)**
 
 To address both issues, I further improved the solution to average only over the **most recent 1000 returns**:
 
@@ -71,7 +67,7 @@ A similar algorithmic idea can be found in other agent-related papers (Mnih et a
 
 This solution is stored in [`./Lab1/part2/task2-2-v2`](./Lab1/part2/task2-2-v2). The algorithm also reaches **90.9% similarity** with the optimal solution, but computed in a much shorter time — the time to average and space to store the data becomes $O(1)$.
 
-#### References
+#### **References**
 
 Sutton, R. S., & Barto, A. G. (2018). *Reinforcement learning: An introduction* (2nd ed.). MIT Press. http://incompleteideas.net/book/the-book-2nd.html
 
