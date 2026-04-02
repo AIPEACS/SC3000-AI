@@ -26,9 +26,9 @@ NTU 2026 Sem 2.
 ---
 
 ## Notable Developments
-### Lab 1 Task 2.2 — Monte Carlo Reinforcement Learning
+### Monte Carlo Reinforcement Learning
 - Author: Allen
-
+- Task: Lab 1 Task 2.2
 #### **Standard Method**
 
 The standard definition of the Q-value is:
