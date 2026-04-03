@@ -1,0 +1,26 @@
+17 ?- trace, line_of_succession(elizabeth, X).
+   Call: (15) line_of_succession(elizabeth, _15720) ? creep
+^  Call: (16) findall(_17448-_17450, offspring(elizabeth, _17450, _17448), _17460) ? creep
+   Call: (20) offspring(elizabeth, _17450, _17448) ? creep
+   Exit: (20) offspring(elizabeth, charles, 1) ? creep
+   Redo: (20) offspring(elizabeth, _17450, _17448) ? creep
+   Exit: (20) offspring(elizabeth, anne, 2) ? creep
+   Redo: (20) offspring(elizabeth, _17450, _17448) ? creep
+   Exit: (20) offspring(elizabeth, andrew, 3) ? creep
+   Redo: (20) offspring(elizabeth, _17450, _17448) ? creep
+   Exit: (20) offspring(elizabeth, edward, 4) ? creep
+^  Exit: (16) findall(_17448-_17450, user:offspring(elizabeth, _17450, _17448), [1-charles, 2-anne, 3-andrew, 4-edward]) ? creep
+   Call: (16) sort([1-charles, 2-anne, 3-andrew, 4-edward], _26480) ? creep
+   Exit: (16) sort([1-charles, 2-anne, 3-andrew, 4-edward], [1-charles, 2-anne, 3-andrew, 4-edward]) ? creep
+   Call: (16) pairs:pairs_values([1-charles, 2-anne, 3-andrew, 4-edward], _15720) ? creep
+   Call: (17) pairs:pairs_values([2-anne, 3-andrew, 4-edward], _31140) ? creep
+   Call: (18) pairs:pairs_values([3-andrew, 4-edward], _32044) ? creep
+   Call: (19) pairs:pairs_values([4-edward], _32948) ? creep
+   Call: (20) pairs:pairs_values([], _33852) ? creep
+   Exit: (20) pairs:pairs_values([], []) ? creep
+   Exit: (19) pairs:pairs_values([4-edward], [edward]) ? creep
+   Exit: (18) pairs:pairs_values([3-andrew, 4-edward], [andrew, edward]) ? creep
+   Exit: (17) pairs:pairs_values([2-anne, 3-andrew, 4-edward], [anne, andrew, edward]) ? creep
+   Exit: (16) pairs:pairs_values([1-charles, 2-anne, 3-andrew, 4-edward], [charles, anne, andrew, edward]) ? creep
+   Exit: (15) line_of_succession(elizabeth, [charles, anne, andrew, edward]) ? creep
+X = [charles, anne, andrew, edward].

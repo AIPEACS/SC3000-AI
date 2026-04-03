@@ -1,0 +1,23 @@
+19 ?- trace, successor(elizabeth, X).
+   Call: (15) successor(elizabeth, _19216) ? creep
+   Call: (16) offspring(elizabeth, _19216, _20942) ? creep
+   Exit: (16) offspring(elizabeth, charles, 1) ? creep
+   Call: (16) offspring(elizabeth, _22850, _22724) ? creep
+   Exit: (16) offspring(elizabeth, charles, 1) ? creep
+   Call: (16) 1<1 ? creep
+   Fail: (16) 1<1 ? creep
+   Redo: (16) offspring(elizabeth, _26408, _22724) ? creep
+   Exit: (16) offspring(elizabeth, anne, 2) ? creep
+   Call: (16) 2<1 ? creep
+   Fail: (16) 2<1 ? creep
+   Redo: (16) offspring(elizabeth, _29966, _22724) ? creep
+   Exit: (16) offspring(elizabeth, andrew, 3) ? creep
+   Call: (16) 3<1 ? creep
+   Fail: (16) 3<1 ? creep
+   Redo: (16) offspring(elizabeth, _33524, _22724) ? creep
+   Exit: (16) offspring(elizabeth, edward, 4) ? creep
+   Call: (16) 4<1 ? creep
+   Fail: (16) 4<1 ? creep
+   Redo: (15) successor(elizabeth, charles) ? creep
+   Exit: (15) successor(elizabeth, charles) ? creep
+X = charles 
