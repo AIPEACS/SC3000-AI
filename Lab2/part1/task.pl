@@ -3,34 +3,35 @@
 % CZ3005 Artificial Intelligence - Assignment 2
 % ======================================================
 %
-% --- Part 1.1: First Order Logic (FOL) Statements ---
-%
-%   1.  Competitor(sumsum, appy)
-%         "sumsum is a competitor of appy"
-%
-%   2.  Developed(sumsum, galactica_s3)
-%         "sumsum developed galactica_s3"
-%
-%   3.  Smartphone(galactica_s3)
-%         "galactica_s3 is smart phone technology"
-%
-%   4.  Stole(stevey, galactica_s3)
-%         "stevey stole galactica_s3"
-%
-%   5.  Boss(stevey, appy)
-%         "stevey is a boss of appy"
-%
-%   6.  ∀x∀y [ Competitor(x, y) → Rival(x, y) ]
-%         "a competitor is a rival"
-%
-%   7.  ∀x [ Smartphone(x) → Business(x) ]
-%         "smart phone technology is business"
-%
-%   8.  ∀x∀y∀z∀w [ Boss(x,y) ∧ Stole(x,z) ∧ Business(z)
-%                   ∧ Developed(w,z) ∧ Rival(w,y)
-%                   → Unethical(x) ]
-%         "it is unethical for a boss to steal business
-%          from rival companies"
+/* --- Part 1.1: First Order Logic (FOL) Statements ---
+
+   1.  Competitor(sumsum, appy)
+         "sumsum is a competitor of appy"
+
+   2.  Developed(sumsum, galactica_s3)
+         "sumsum developed galactica_s3"
+
+   3.  Smartphone(galactica_s3)
+         "galactica_s3 is smart phone technology"
+
+   4.  Stole(stevey, galactica_s3)
+         "stevey stole galactica_s3"
+
+   5.  Boss(stevey, appy)
+         "stevey is a boss of appy"
+
+   6.  ∀x∀y [ Competitor(x, y) → Rival(x, y) ]
+         "a competitor is a rival"
+
+   7.  ∀x [ Smartphone(x) → Business(x) ]
+         "smart phone technology is business"
+
+   8.  ∀x∀y∀z∀w [ Boss(x,y) ∧ Stole(x,z) ∧ Business(z)
+                   ∧ Developed(w,z) ∧ Rival(w,y)
+                   → Unethical(x) ]
+         "it is unethical for a boss to steal business
+          from rival companies"
+*/
 %
 % --- Part 1.2: Prolog Clauses ---
 

@@ -28,7 +28,7 @@ else
     # leash(-all) makes trace non-interactive (prints all steps without pausing)
     swipl -s "$PL_FILE" \
           -g 'leash(-all), trace, unethical(stevey), notrace, halt.' \
-          2>&1 | tee "$OUT_FILE"
+          2>&1 | sed 's/^[[:space:]]*//' | tee "$OUT_FILE"
 
     echo ""
     echo "Done. Trace saved to: $OUT_FILE"
