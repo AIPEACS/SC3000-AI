@@ -1,0 +1,41 @@
+?- trace, successor(elizabeth, X).
+   Call: (15) successor(elizabeth, _19190) ? creep
+   Call: (16) offspring(elizabeth, _19190, _20916) ? creep
+   Exit: (16) offspring(elizabeth, charles, 1) ? creep
+   Call: (16) is_male(charles) ? creep
+   Call: (17) male(charles) ? creep
+   Exit: (17) male(charles) ? creep
+   Exit: (16) is_male(charles) ? creep
+   Call: (16) offspring(elizabeth, _26226, _26228) ? creep
+   Exit: (16) offspring(elizabeth, charles, 1) ? creep
+   Call: (16) is_male(charles) ? creep
+   Call: (17) male(charles) ? creep
+   Exit: (17) male(charles) ? creep
+   Exit: (16) is_male(charles) ? creep
+   Call: (16) 1<1 ? creep
+   Fail: (16) 1<1 ? creep
+   Redo: (16) offspring(elizabeth, _26226, _26228) ? creep
+   Exit: (16) offspring(elizabeth, anne, 2) ? creep
+   Call: (16) is_male(anne) ? creep
+   Call: (17) male(anne) ? creep
+   Fail: (17) male(anne) ? creep
+   Fail: (16) is_male(anne) ? creep
+   Redo: (16) offspring(elizabeth, _26226, _26228) ? creep
+   Exit: (16) offspring(elizabeth, andrew, 3) ? creep
+   Call: (16) is_male(andrew) ? creep
+   Call: (17) male(andrew) ? creep
+   Exit: (17) male(andrew) ? creep
+   Exit: (16) is_male(andrew) ? creep
+   Call: (16) 3<1 ? creep
+   Fail: (16) 3<1 ? creep
+   Redo: (16) offspring(elizabeth, _26226, _26228) ? creep
+   Exit: (16) offspring(elizabeth, edward, 4) ? creep
+   Call: (16) is_male(edward) ? creep
+   Call: (17) male(edward) ? creep
+   Exit: (17) male(edward) ? creep
+   Exit: (16) is_male(edward) ? creep
+   Call: (16) 4<1 ? creep
+   Fail: (16) 4<1 ? creep
+   Redo: (15) successor(elizabeth, charles) ? creep
+   Exit: (15) successor(elizabeth, charles) ? creep
+X = charles
