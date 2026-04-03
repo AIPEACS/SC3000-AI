@@ -5,8 +5,8 @@ NTU 2026 Sem 2.
   - Task 1: Using different search algorithms to find a path from start to end in a grid world.
   - Task 2: Implementing Monte Carlo and Q-Learning Reinforcement Learning to solve a maze.
 - Lab 2:
-  - Task 1: TBD
-  - Task 2: TBD
+  - Task 1: Encoding a smart phone rivalry scenario in First Order Logic and proving unethical behaviour using Prolog.
+  - Task 2: Modelling the British Royal Family succession rules (old and new) as a Prolog knowledge base.
 
 ---
 
