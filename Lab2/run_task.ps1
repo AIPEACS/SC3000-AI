@@ -33,7 +33,7 @@ if ($Interactive) {
     # leash(-all) makes trace non-interactive (prints all steps without pausing)
     $output = swipl -s $PlFile -g "leash(-all), trace, unethical(stevey), notrace, halt." 2>&1
 
-    $stripped = $output | ForEach-Object { $_.TrimStart() }
+    $stripped = $output | ForEach-Object { "$_".TrimStart() }
     $stripped | Tee-Object -FilePath $OutFile
 
     Write-Host ""
