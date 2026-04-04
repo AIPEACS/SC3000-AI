@@ -1,74 +1,72 @@
-trace, line_of_succession(elizabeth, X).
-   Call: (15) line_of_succession(elizabeth, _19384) ? creep
-^  Call: (16) findall(_21112-_21114, (offspring(elizabeth, _21114, _21112), is_male(_21114)), _21134) ? creep
-   Call: (21) offspring(elizabeth, _21114, _21112) ? creep
-   Exit: (21) offspring(elizabeth, charles, 1) ? creep
-   Call: (21) is_male(charles) ? creep
-   Call: (22) male(charles) ? creep
-   Exit: (22) male(charles) ? creep
-   Exit: (21) is_male(charles) ? creep
-   Redo: (21) offspring(elizabeth, _21114, _21112) ? creep
-   Exit: (21) offspring(elizabeth, anne, 2) ? creep
-   Call: (21) is_male(anne) ? creep
-   Call: (22) male(anne) ? creep
-   Fail: (22) male(anne) ? creep
-   Fail: (21) is_male(anne) ? creep
-   Redo: (21) offspring(elizabeth, _21114, _21112) ? creep
-   Exit: (21) offspring(elizabeth, andrew, 3) ? creep
-   Call: (21) is_male(andrew) ? creep
-   Call: (22) male(andrew) ? creep
-   Exit: (22) male(andrew) ? creep
-   Exit: (21) is_male(andrew) ? creep
-   Redo: (21) offspring(elizabeth, _21114, _21112) ? creep
-   Exit: (21) offspring(elizabeth, edward, 4) ? creep
-   Call: (21) is_male(edward) ? creep
-   Call: (22) male(edward) ? creep
-   Exit: (22) male(edward) ? creep
-   Exit: (21) is_male(edward) ? creep
-^  Exit: (16) findall(_21112-_21114, user:(offspring(elizabeth, _21114, _21112), is_male(_21114)), [1-charles, 3-andrew, 4-edward]) ? creep
-   Call: (16) sort([1-charles, 3-andrew, 4-edward], _44254) ? creep
-   Exit: (16) sort([1-charles, 3-andrew, 4-edward], [1-charles, 3-andrew, 4-edward]) ? creep
-^  Call: (16) findall(_21112-_21114, (offspring(elizabeth, _21114, _21112), is_female(_21114)), _46070) ? creep
-   Call: (21) offspring(elizabeth, _21114, _21112) ? creep
-   Exit: (21) offspring(elizabeth, charles, 1) ? creep
-   Call: (21) is_female(charles) ? creep
-   Call: (22) female(charles) ? creep
-   Fail: (22) female(charles) ? creep
-   Fail: (21) is_female(charles) ? creep
-   Redo: (21) offspring(elizabeth, _21114, _21112) ? creep
-   Exit: (21) offspring(elizabeth, anne, 2) ? creep
-   Call: (21) is_female(anne) ? creep
-   Call: (22) female(anne) ? creep
-   Exit: (22) female(anne) ? creep
-   Exit: (21) is_female(anne) ? creep
-   Redo: (21) offspring(elizabeth, _21114, _21112) ? creep
-   Exit: (21) offspring(elizabeth, andrew, 3) ? creep
-   Call: (21) is_female(andrew) ? creep
-   Call: (22) female(andrew) ? creep
-   Fail: (22) female(andrew) ? creep
-   Fail: (21) is_female(andrew) ? creep
-   Redo: (21) offspring(elizabeth, _21114, _21112) ? creep
-   Exit: (21) offspring(elizabeth, edward, 4) ? creep
-   Call: (21) is_female(edward) ? creep
-   Call: (22) female(edward) ? creep
-   Fail: (22) female(edward) ? creep
-   Fail: (21) is_female(edward) ? creep
-^  Exit: (16) findall(_134-_136, user:(offspring(elizabeth, _136, _134), is_female(_136)), [2-anne]) ? creep
-   Call: (16) sort([2-anne], _5282) ? creep
-   Exit: (16) sort([2-anne], [2-anne]) ? creep
-   Call: (16) pairs:pairs_values([1-charles, 3-andrew, 4-edward], _7056) ? creep
-   Call: (17) pairs:pairs_values([3-andrew, 4-edward], _9920) ? creep
-   Call: (18) pairs:pairs_values([4-edward], _10824) ? creep
-   Call: (19) pairs:pairs_values([], _11728) ? creep
-   Exit: (19) pairs:pairs_values([], []) ? creep
-   Exit: (18) pairs:pairs_values([4-edward], [edward]) ? creep
-   Exit: (17) pairs:pairs_values([3-andrew, 4-edward], [andrew, edward]) ? creep
-   Exit: (16) pairs:pairs_values([1-charles, 3-andrew, 4-edward], [charles, andrew, edward]) ? creep
-   Call: (16) pairs:pairs_values([2-anne], _16220) ? creep
-   Call: (17) pairs:pairs_values([], _17124) ? creep
-   Exit: (17) pairs:pairs_values([], []) ? creep
-   Exit: (16) pairs:pairs_values([2-anne], [anne]) ? creep
-   Call: (16) lists:append([charles, andrew, edward], [anne], _92) ? creep
-   Exit: (16) lists:append([charles, andrew, edward], [anne], [charles, andrew, edward, anne]) ? creep
-   Exit: (15) line_of_succession(elizabeth, [charles, andrew, edward, anne]) ? creep
-X = [charles, andrew, edward, anne].
+Call: (12) line_of_succession(elizabeth, _2202)
+^  Call: (13) findall(_3300-_3302, (offspring(elizabeth, _3302, _3300), is_male(_3302)), _3322)
+Call: (18) offspring(elizabeth, _3302, _3300)
+Exit: (18) offspring(elizabeth, charles, 1)
+Call: (18) is_male(charles)
+Call: (19) male(charles)
+Exit: (19) male(charles)
+Exit: (18) is_male(charles)
+Redo: (18) offspring(elizabeth, _3302, _3300)
+Exit: (18) offspring(elizabeth, anne, 2)
+Call: (18) is_male(anne)
+Call: (19) male(anne)
+Fail: (19) male(anne)
+Fail: (18) is_male(anne)
+Redo: (18) offspring(elizabeth, _3302, _3300)
+Exit: (18) offspring(elizabeth, andrew, 3)
+Call: (18) is_male(andrew)
+Call: (19) male(andrew)
+Exit: (19) male(andrew)
+Exit: (18) is_male(andrew)
+Redo: (18) offspring(elizabeth, _3302, _3300)
+Exit: (18) offspring(elizabeth, edward, 4)
+Call: (18) is_male(edward)
+Call: (19) male(edward)
+Exit: (19) male(edward)
+Exit: (18) is_male(edward)
+^  Exit: (13) findall(_3300-_3302, user:(offspring(elizabeth, _3302, _3300), is_male(_3302)), [1-charles, 3-andrew, 4-edward])
+Call: (13) sort([1-charles, 3-andrew, 4-edward], _21710)
+Exit: (13) sort([1-charles, 3-andrew, 4-edward], [1-charles, 3-andrew, 4-edward])
+^  Call: (13) findall(_3300-_3302, (offspring(elizabeth, _3302, _3300), is_female(_3302)), _23162)
+Call: (18) offspring(elizabeth, _3302, _3300)
+Exit: (18) offspring(elizabeth, charles, 1)
+Call: (18) is_female(charles)
+Call: (19) female(charles)
+Fail: (19) female(charles)
+Fail: (18) is_female(charles)
+Redo: (18) offspring(elizabeth, _3302, _3300)
+Exit: (18) offspring(elizabeth, anne, 2)
+Call: (18) is_female(anne)
+Call: (19) female(anne)
+Exit: (19) female(anne)
+Exit: (18) is_female(anne)
+Redo: (18) offspring(elizabeth, _3302, _3300)
+Exit: (18) offspring(elizabeth, andrew, 3)
+Call: (18) is_female(andrew)
+Call: (19) female(andrew)
+Fail: (19) female(andrew)
+Fail: (18) is_female(andrew)
+Redo: (18) offspring(elizabeth, _3302, _3300)
+Exit: (18) offspring(elizabeth, edward, 4)
+Call: (18) is_female(edward)
+Call: (19) female(edward)
+Fail: (19) female(edward)
+Fail: (18) is_female(edward)
+^  Exit: (13) findall(_3300-_3302, user:(offspring(elizabeth, _3302, _3300), is_female(_3302)), [2-anne])
+Call: (13) sort([2-anne], _41526)
+Exit: (13) sort([2-anne], [2-anne])
+Call: (13) pairs:pairs_values([1-charles, 3-andrew, 4-edward], _42936)
+Call: (14) pairs:pairs_values([3-andrew, 4-edward], _45632)
+Call: (15) pairs:pairs_values([4-edward], _46354)
+Call: (16) pairs:pairs_values([], _47076)
+Exit: (16) pairs:pairs_values([], [])
+Exit: (15) pairs:pairs_values([4-edward], [edward])
+Exit: (14) pairs:pairs_values([3-andrew, 4-edward], [andrew, edward])
+Exit: (13) pairs:pairs_values([1-charles, 3-andrew, 4-edward], [charles, andrew, edward])
+Call: (13) pairs:pairs_values([2-anne], _50658)
+Call: (14) pairs:pairs_values([], _51380)
+Exit: (14) pairs:pairs_values([], [])
+Exit: (13) pairs:pairs_values([2-anne], [anne])
+Call: (13) lists:append([charles, andrew, edward], [anne], _2202)
+Exit: (13) lists:append([charles, andrew, edward], [anne], [charles, andrew, edward, anne])
+Exit: (12) line_of_succession(elizabeth, [charles, andrew, edward, anne])
