@@ -24,19 +24,6 @@ is_male(X) :- male(X).
 % Determine if a person is female
 is_female(X) :- female(X).
 
-% Get all offspring of a parent in birth order
-get_offspring(Parent, Child, BirthOrder) :-
-    offspring(Parent, Child, BirthOrder).
-
-% Get male offspring of a parent
-male_offspring(Parent, Child) :-
-    offspring(Parent, Child, _),
-    is_male(Child).
-
-% Get female offspring of a parent
-female_offspring(Parent, Child) :-
-    offspring(Parent, Child, _),
-    is_female(Child).
 
 % NEW Succession rule: determine next in line for a given parent
 % All offspring in birth order, regardless of gender
