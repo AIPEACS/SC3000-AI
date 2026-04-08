@@ -83,15 +83,116 @@ Call: unethical(stevey)
 
 ---
 
-# Exercise 2: The Royal Family (Coming Soon)
+# Exercise 2: The Royal Family
 
 ## Problem Statement
 
 > queen elizabeth has four offsprings in birth order: prince charles, princess ann, prince andrew,
-> prince edward. The **old** succession rule passes the throne to male offspring first (in birth order),
-> then female offspring (in birth order). The **new** succession rule passes the throne in birth order
-> regardless of gender.
+> prince edward.
+>
+> **Old rule**: the throne passes to male offspring first (in birth order), then female offspring (in birth order).
+>
+> **New rule**: the throne passes in birth order irrespective of gender.
 
-**Goals**:
-1. Define relations + old succession rule; determine the old succession order.
-2. Modify the knowledge base for the new succession rule; determine the new succession order.
+---
+
+## Part 2.1 — Old Succession Rule
+
+### Knowledge Base
+
+| Fact | Meaning |
+|------|---------|
+| `offspring(elizabeth, charles, 1)` | charles is elizabeth's 1st child |
+| `offspring(elizabeth, anne, 2)` | anne is elizabeth's 2nd child |
+| `offspring(elizabeth, andrew, 3)` | andrew is elizabeth's 3rd child |
+| `offspring(elizabeth, edward, 4)` | edward is elizabeth's 4th child |
+| `male(charles)`, `male(andrew)`, `male(edward)` | gender facts |
+| `female(elizabeth)`, `female(anne)` | gender facts |
+
+### Old Succession Rule
+
+Two clauses — males first by birth order, then females (only when no male exists at that position):
+
+```prolog
+% First: male offspring, in birth order
+successor(Parent, Successor) :-
+    offspring(Parent, Successor, BirthOrder1),
+    is_male(Successor),
+    \+ (offspring(Parent, Other, BirthOrder2), is_male(Other), BirthOrder2 < BirthOrder1).
+
+% Then: female offspring, in birth order (only when no male is available)
+successor(Parent, Successor) :-
+    offspring(Parent, Successor, BirthOrder1),
+    is_female(Successor),
+    \+ (offspring(Parent, Male, _), is_male(Male)),
+    \+ (offspring(Parent, Other, BirthOrder2), is_female(Other), BirthOrder2 < BirthOrder1).
+```
+
+`line_of_succession` collects males sorted by birth order, then females sorted by birth order, and appends them:
+
+```prolog
+line_of_succession(elizabeth, SuccessionList) :-
+    findall(BirthOrder-X, (offspring(elizabeth, X, BirthOrder), is_male(X)), MaleHeirs),
+    sort(MaleHeirs, SortedMales),
+    findall(BirthOrder-X, (offspring(elizabeth, X, BirthOrder), is_female(X)), FemaleHeirs),
+    sort(FemaleHeirs, SortedFemales),
+    pairs_values(SortedMales, Males),
+    pairs_values(SortedFemales, Females),
+    append(Males, Females, SuccessionList).
+```
+
+### Result
+
+**Old line of succession**: `[charles, andrew, edward, anne]`
+
+- charles (male, 1st born) → andrew (male, 3rd born) → edward (male, 4th born) → anne (female, 2nd born)
+
+---
+
+## Part 2.2 — New Succession Rule
+
+### Necessary Changes
+
+The new rule removes gender-based prioritisation. The `line_of_succession` rule is simplified to collect **all offspring** and sort by birth order alone:
+
+```prolog
+% Old: separate findall for males then females, append
+% New: single findall for all offspring, sort by birth order
+line_of_succession(elizabeth, SuccessionList) :-
+    findall(BirthOrder-X, offspring(elizabeth, X, BirthOrder), AllHeirs),
+    sort(AllHeirs, SortedHeirs),
+    pairs_values(SortedHeirs, SuccessionList).
+```
+
+The gender facts (`male/1`, `female/1`) and helper predicates (`is_male/1`, `is_female/1`) are retained in the file but are no longer used by the succession rule. No knowledge about individuals needs to change — only the rule itself.
+
+### Result
+
+**New line of succession**: `[charles, anne, andrew, edward]`
+
+- charles (1st born) → anne (2nd born) → andrew (3rd born) → edward (4th born)
+
+### Comparison
+
+| Position | Old rule | New rule |
+|----------|----------|----------|
+| 1st | charles (male, born 1st) | charles (born 1st) |
+| 2nd | andrew (male, born 3rd) | anne (born 2nd) — promoted |
+| 3rd | edward (male, born 4th) | andrew (born 3rd) — demoted |
+| 4th | anne (female, born 2nd) | edward (born 4th) — demoted |
+
+Anne moves from last to 2nd in line; andrew and edward each move one position back.
+
+---
+
+## Running the Traces
+
+```powershell
+# Windows
+.\run_task.ps1 -Interactive   # select 2 → opens swipl for manual stepping
+```
+
+Output files:
+- `part2/task2_1_LOS.txt` — old rule trace
+- `part2/task2_2_LOS.txt` — new rule trace
+
